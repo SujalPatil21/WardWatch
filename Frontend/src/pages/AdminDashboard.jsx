@@ -1,32 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import WardGrid from '../components/Ward/WardGrid';
-import { fetchWards } from '../services/wardService';
+import { fetchWards, fetchBeds, fetchAlerts } from '../services/wardService';
 
 /**
  * AdminDashboard: Primary hospital overview.
- * Features:
- * - Collapsible Sidebar (Navigation only)
- * - Ward Grid mapping all hospital wards
- * - Visualization of hospital state
  */
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [wards, setWards] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      // Parallel fetch for speed and synchronization
+      const [wardsData, bedsData, alertsData] = await Promise.allSettled([
+        fetchWards(),
+        fetchBeds(),
+        fetchAlerts()
+      ]);
+
+      const wardsList = wardsData.status === 'fulfilled' ? (wardsData.value || []) : [];
+      const bedsList = bedsData.status === 'fulfilled' ? (bedsData.value || []) : [];
+      const alerts = alertsData.status === 'fulfilled' ? (alertsData.value || { cleaningAlerts: [], capacityAlerts: [] }) : { cleaningAlerts: [], capacityAlerts: [] };
+
+      // Map bedId -> wardId for cleaning alerts
+      const bedToWardMap = bedsList.reduce((acc, bed) => {
+        acc[bed.id] = bed.wardId;
+        return acc;
+      }, {});
+
+      // Calculate capacity and map alerts per ward
+      const enrichedWards = wardsList.map(ward => {
+        const wardBeds = bedsList.filter(b => b.wardId === ward.id);
+        
+        // Filter cleaning alerts for this ward
+        const wardCleaning = (alerts.cleaningAlerts || [])
+          .filter(a => bedToWardMap[a.bedId] === ward.id)
+          .map(a => ({ ...a, type: 'CLEANING' }));
+
+        // Filter capacity alerts for this ward
+        const wardCapacity = (alerts.capacityAlerts || [])
+          .filter(a => a.wardId === ward.id)
+          .map(a => ({ ...a, type: 'CAPACITY' }));
+
+        return {
+          ...ward,
+          totalBeds: wardBeds.length,
+          occupiedBeds: wardBeds.filter(b => b.status === 'OCCUPIED').length,
+          alerts: [...wardCleaning, ...wardCapacity]
+        };
+      });
+
+      setWards(enrichedWards);
+    } catch (err) {
+      console.error('[AdminDashboard] Critical failure loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadWards = async () => {
-      try {
-        const data = await fetchWards();
-        setWards(data || []);
-      } catch (err) {
-        console.error('[AdminDashboard] Failed to load wards:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadWards();
+    loadData();
   }, []);
 
   return (

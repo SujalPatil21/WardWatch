@@ -22,7 +22,11 @@ export default function QueueDashboard() {
   const [queue, setQueue] = useState([]);
   const [wards, setWards] = useState([]);
   const [name, setName] = useState('');
-  const [selectedWardType, setSelectedWardType] = useState('');
+  
+  // FIXED: No default selection, store both name and ID
+  const [selectedWardName, setSelectedWardName] = useState('');
+  const [selectedAdmitWards, setSelectedAdmitWards] = useState({}); // { queueId: wardId }
+
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -37,10 +41,17 @@ export default function QueueDashboard() {
       setQueue(queueData || []);
       setWards(wardsData || []);
       
-      // Default ward type selection to the first available if not set
-      if (!selectedWardType && wardsData.length > 0) {
-        setSelectedWardType(wardsData[0].name);
-      }
+      // Initialize selectedAdmitWards map for WAITING patients if not already set
+      const initialAdmitMap = {};
+      (queueData || []).forEach(q => {
+        if (q.status === 'WAITING') {
+          // Find matching ward for the requested type if possible, else null
+          const match = (wardsData || []).find(w => w.name === q.type);
+          initialAdmitMap[q.id] = match ? match.id : (wardsData[0]?.id || null);
+        }
+      });
+      setSelectedAdmitWards(prev => ({ ...initialAdmitMap, ...prev }));
+      
       setError(null);
     } catch (err) {
       console.error('[QueueDashboard] Failed to sync data:', err);
@@ -48,7 +59,7 @@ export default function QueueDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [selectedWardType]);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -56,12 +67,13 @@ export default function QueueDashboard() {
 
   const handleAddPatient = async (e) => {
     e.preventDefault();
-    if (!name || isSubmitting) return;
+    if (!name || !selectedWardName || isSubmitting) return;
 
     try {
       setIsSubmitting(true);
-      await addPatientToQueue(name, selectedWardType);
+      await addPatientToQueue(name, selectedWardName);
       setName('');
+      setSelectedWardName(''); // Reset
       await loadData();
     } catch (err) {
       console.error('Failed to add patient:', err);
@@ -73,7 +85,9 @@ export default function QueueDashboard() {
   const handleAction = async (id, action, wardId = null) => {
     try {
       setLoading(true);
-      await completeQueueAction(id, action, wardId);
+      // Ensure we pass the wardId for admission
+      const finalWardId = action === 'admit' ? (wardId || selectedAdmitWards[id]) : null;
+      await completeQueueAction(id, action, finalWardId);
       await loadData();
     } catch (err) {
       console.error(`Failed to ${action}:`, err);
@@ -84,6 +98,13 @@ export default function QueueDashboard() {
 
   const waitingPatients = queue.filter(q => q.status === 'WAITING');
   const dischargePatients = queue.filter(q => q.status === 'DISCHARGE_PENDING');
+
+  const handleWardSelectChange = (queueId, wardId) => {
+    setSelectedAdmitWards(prev => ({
+      ...prev,
+      [queueId]: wardId
+    }));
+  };
 
   return (
     <div className="dashboard-container" style={{ display: 'flex', minHeight: '100vh', background: '#0f172a' }}>
@@ -179,8 +200,9 @@ export default function QueueDashboard() {
                   Ward Type Request
                 </label>
                 <select 
-                  value={selectedWardType}
-                  onChange={(e) => setSelectedWardType(e.target.value)}
+                  value={selectedWardName}
+                  onChange={(e) => setSelectedWardName(e.target.value)}
+                  required
                   style={{
                     width: '100%',
                     background: 'rgba(15, 23, 42, 0.6)',
@@ -194,6 +216,7 @@ export default function QueueDashboard() {
                     cursor: 'pointer'
                   }}
                 >
+                  <option value="" disabled>Select Ward Type...</option>
                   {/* Dynamic ward options */}
                   {Array.from(new Set(wards.map(w => w.name))).map(name => (
                     <option key={name} value={name}>{name}</option>
@@ -203,7 +226,7 @@ export default function QueueDashboard() {
 
               <button 
                 type="submit"
-                disabled={isSubmitting || loading}
+                disabled={isSubmitting || loading || !name || !selectedWardName}
                 style={{
                   background: 'linear-gradient(135deg, #3dbdaa 0%, #2563eb 100%)',
                   border: 'none',
@@ -212,8 +235,8 @@ export default function QueueDashboard() {
                   borderRadius: '12px',
                   fontWeight: '700',
                   fontSize: '15px',
-                  cursor: (isSubmitting || loading) ? 'not-allowed' : 'pointer',
-                  opacity: (isSubmitting || loading) ? 0.6 : 1,
+                  cursor: (isSubmitting || loading || !name || !selectedWardName) ? 'not-allowed' : 'pointer',
+                  opacity: (isSubmitting || loading || !name || !selectedWardName) ? 0.6 : 1,
                   boxShadow: '0 4px 20px rgba(61, 189, 170, 0.25)',
                   transition: 'all 0.2s ease',
                   marginTop: '10px'
@@ -233,6 +256,8 @@ export default function QueueDashboard() {
               icon="⏳" 
               items={waitingPatients} 
               wards={wards}
+              selectedAdmitWards={selectedAdmitWards}
+              onWardSelect={handleWardSelectChange}
               onAction={handleAction}
               type="WAITING"
             />
@@ -258,13 +283,14 @@ export default function QueueDashboard() {
   );
 }
 
-const QueueSection = ({ title, icon, items, wards, onAction, type }) => (
+const QueueSection = ({ title, icon, items, wards, selectedAdmitWards, onWardSelect, onAction, type }) => (
   <section style={{
     background: 'rgba(30, 41, 59, 0.5)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
     borderRadius: '24px',
     padding: '30px',
-    backdropFilter: 'blur(10px)'
+    backdropFilter: 'blur(10px)',
+    overflow: 'visible' // Ensure dropdown is not clipped
   }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
       <h2 style={{ fontSize: '18px', fontWeight: '700', display: 'flex', gap: '10px', alignItems: 'center', margin: 0 }}>
@@ -282,7 +308,7 @@ const QueueSection = ({ title, icon, items, wards, onAction, type }) => (
       </span>
     </div>
 
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'visible' }}>
       {items.length === 0 ? (
         <div style={{ 
           padding: '40px', 
@@ -303,9 +329,11 @@ const QueueSection = ({ title, icon, items, wards, onAction, type }) => (
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            position: 'relative',
+            zIndex: 10
           }}>
-            <div>
+            <div style={{ flex: 1 }}>
               <div style={{ fontSize: '15px', fontWeight: '700', color: '#e2e8f0' }}>{item.name}</div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
                 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -319,31 +347,37 @@ const QueueSection = ({ title, icon, items, wards, onAction, type }) => (
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', zIndex: 100 }}>
               {type === 'WAITING' ? (
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <select 
-                    id={`ward-select-${item.id}`}
+                    value={selectedAdmitWards ? selectedAdmitWards[item.id] || '' : ''}
+                    onChange={(e) => onWardSelect(item.id, e.target.value)}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: '#fff',
+                      background: '#0f172a', // Dark background
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#fff', // White text
                       borderRadius: '8px',
-                      padding: '8px 12px',
+                      padding: '8px 30px 8px 12px',
                       fontSize: '13px',
                       outline: 'none',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      appearance: 'none',
+                      zIndex: 1000, // High z-index
+                      position: 'relative'
                     }}
                   >
+                    <option value="" disabled>Select Ward...</option>
                     {wards.map(ward => (
                       <option key={ward.id} value={ward.id}>{ward.name}</option>
                     ))}
                   </select>
                   <button 
                     onClick={() => {
-                      const sel = document.getElementById(`ward-select-${item.id}`);
-                      onAction(item.id, 'admit', sel.value);
+                      const wardId = selectedAdmitWards[item.id];
+                      if (wardId) onAction(item.id, 'admit', wardId);
                     }}
+                    disabled={!selectedAdmitWards[item.id]}
                     style={{
                       background: '#10b981',
                       border: 'none',
@@ -352,11 +386,11 @@ const QueueSection = ({ title, icon, items, wards, onAction, type }) => (
                       borderRadius: '8px',
                       fontSize: '13px',
                       fontWeight: '700',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      cursor: !selectedAdmitWards[item.id] ? 'not-allowed' : 'pointer',
+                      opacity: !selectedAdmitWards[item.id] ? 0.5 : 1,
+                      transition: 'all 0.2s ease',
+                      whiteSpace: 'nowrap'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(1)'}
                   >
                     Admit
                   </button>
@@ -374,14 +408,6 @@ const QueueSection = ({ title, icon, items, wards, onAction, type }) => (
                     fontWeight: '700',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(239,68,68,0.25)';
-                    e.currentTarget.style.color = '#fff';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(239,68,68,0.15)';
-                    e.currentTarget.style.color = '#fca5a5';
                   }}
                 >
                   Discharge
