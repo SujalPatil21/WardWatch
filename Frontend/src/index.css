@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --color-teal: #3dbdaa;
+  --color-teal-glow: rgba(61, 189, 170, 0.4);
+  --color-purple-light: #a78bfa;
+  --color-purple-dark: #4c1d95;
+  --color-bg-dark-purple: #1e1b4b;
+  --color-bg-deep-blue: #0f172a;
+}
+
+@layer base {
+  body, html, #root {
+    @apply m-0 p-0 w-full h-full;
+    background-color: #0b0f19;
+    color: white;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    overscroll-behavior-y: none;
+  }
+}
+
+/* Base utility for glassmorphism */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(255, 255, 255, 0.08); /* slight top light catch */
+  border-left: 1px solid rgba(61, 189, 170, 0.15); /* very soft teal left light */
+  box-shadow: 
+    0 24px 48px -12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 10px rgba(255, 255, 255, 0.02),
+    inset 1px 0 20px rgba(61, 189, 170, 0.03); /* Ambient reflection */
+}
+
+/* Custom modern smooth ease */
+.ease-apple {
+  transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.input-glow:focus {
+  box-shadow: 0 0 0 1px var(--color-teal), 0 0 15px var(--color-teal-glow);
+  outline: none;
+}
