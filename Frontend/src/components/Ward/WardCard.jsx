@@ -26,7 +26,7 @@ const WardCard = ({ ward }) => {
   const statusColor = getStatusColor(status);
 
   const handleClick = () => {
-    navigate(`/dashboard/ward/${ward.id}`);
+    navigate(`/ward/${ward.id}`);
   };
 
   const handleMouseEnter = (e) => {
