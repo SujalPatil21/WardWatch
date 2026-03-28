@@ -27,7 +27,7 @@ public class BedController {
         try {
             String action = payload.get("action");
             if ("ASSIGN".equals(action)) {
-                return ResponseEntity.ok(bedService.assignBed(id, payload.get("patientName"), payload.get("doctor"), payload.get("conditionCategory")));
+                return ResponseEntity.ok(bedService.assignBed(id, payload.get("patientName"), payload.get("doctor")));
             } else if ("FREE".equals(action)) {
                 return ResponseEntity.ok(bedService.freeBed(id));
             } else if ("UPDATE_STATUS".equals(action)) {
