@@ -1,0 +1,304 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Basic resets */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  color: #1a1a2e;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* PAGE LAYOUT + ENTRY STAGE 1 (Full screen slide) */
+/* ─────────────────────────────────────────────────────────────── */
+
+.landing {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: #fbfcfe;
+  overflow: hidden;
+  
+  /* Initial State: slide from left + fade */
+  transform: translateX(-100px);
+  opacity: 0;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease-out;
+  will-change: transform, opacity;
+}
+
+.landing.active {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* BACKGROUND (Soft purple + light teal + glow layers) */
+.bg-canvas {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #f2f5ff 0%, #f6f1ff 100%);
+  z-index: 0;
+}
+
+.bg-glow-top {
+  position: absolute;
+  top: -10%;
+  left: -5%;
+  width: 70%;
+  height: 70%;
+  background: radial-gradient(circle at center, rgba(138, 127, 244, 0.1) 0%, transparent 60%);
+  z-index: 1;
+}
+
+.bg-glow-bottom {
+  position: absolute;
+  bottom: -10%;
+  right: -5%;
+  width: 70%;
+  height: 70%;
+  background: radial-gradient(circle at center, rgba(61, 189, 170, 0.07) 0%, transparent 60%);
+  z-index: 1;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* LEFT SIDE: GROUNDED BUILDING (Entry STAGE 2) */
+/* ─────────────────────────────────────────────────────────────── */
+
+.visual-side {
+  flex: 0 0 60%;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end; /* Grounded to bottom */
+  justify-content: center;
+  padding-bottom: 2rem; /* Give some ground padding */
+}
+
+.building-frame {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  
+  /* Initial State: slide below + fade (starts after 0.4s) */
+  transform: translateY(120px);
+  opacity: 0;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s, opacity 0.8s ease-out 0.4s;
+  will-change: transform, opacity;
+}
+
+.building-frame.appear {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.grounded-building {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 85vh;
+  filter: drop-shadow(0 20px 80px rgba(0, 0, 0, 0.08));
+  
+  /* Subtle IDLE Float (Very slow and smooth) */
+  animation: idleSmooth 6s ease-in-out infinite alternate;
+  animation-delay: 1.2s; /* Starts after slide-in */
+}
+
+@keyframes idleSmooth {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-6px); }
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* RIGHT SIDE: INTERACTIONS (Entry STAGE 3) */
+/* ─────────────────────────────────────────────────────────────── */
+
+.interaction-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+  padding: 4rem 5rem 4rem 2rem;
+}
+
+/* BRANDING header */
+.branding {
+  margin-bottom: auto;
+  opacity: 0;
+  transform: translateY(15px);
+  transition: all 0.8s ease-out 0.7s; /* Reveal after building */
+}
+
+.branding.reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.2rem;
+}
+
+.brand-symbol {
+  color: #3dbdaa;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.brand-name {
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  letter-spacing: -0.05em;
+}
+
+.brand-tagline {
+  font-size: 0.8rem;
+  color: #636a8e;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+/* Login box centered vertically */
+.auth-container {
+  margin-bottom: auto;
+  display: flex;
+  align-items: center;
+}
+
+.auth-box {
+  background: white;
+  border-radius: 26px;
+  padding: 3rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 60px rgba(130, 140, 180, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  
+  /* ENTRY REVEAL (after branding) */
+  opacity: 0;
+  transform: translateY(15px);
+  transition: all 0.8s ease-out 0.85s;
+}
+
+.auth-box.reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.auth-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 1.6rem;
+  letter-spacing: -0.01em;
+}
+
+/* Type Toggle for admin/staff */
+.type-toggle {
+  display: flex;
+  gap: 0.4rem;
+  background: #f4f6fb;
+  border-radius: 14px;
+  padding: 5px;
+  margin-bottom: 1.8rem;
+}
+
+.type-btn {
+  flex: 1;
+  padding: 0.6rem 0;
+  border: none;
+  background: transparent;
+  color: #6d768d;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.3s ease;
+}
+
+.type-btn.active {
+  background: white;
+  color: #1a1a2e;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Forms with smooth interactions */
+.auth-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.72rem;
+  color: #8a91ad;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.form-group input {
+  background: #f9faff;
+  border: 1px solid #e1e5f0;
+  border-radius: 12px;
+  padding: 0.8rem 1.2rem;
+  color: #1a1a2e;
+  font-size: 0.92rem;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+  border-color: #3dbdaa;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(61, 189, 170, 0.08);
+}
+
+/* Submit with gradient */
+.auth-submit {
+  margin-top: 0.6rem;
+  padding: 0.9rem;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2a2a4e 100%);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 0.94rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.auth-submit:hover {
+  background: #2a2a4e;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(26, 26, 46, 0.22);
+}
+
+.auth-footer {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #8a91ad;
+  margin-top: 0.4rem;
+}
+
+.auth-footer a {
+  color: #3dbdaa;
+  text-decoration: none;
+  font-weight: 600;
+}
