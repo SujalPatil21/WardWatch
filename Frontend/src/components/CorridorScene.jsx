@@ -4,15 +4,11 @@ import { useNavigate } from 'react-router-dom';
 const CorridorScene = () => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Basic placeholder for the corridor flow.
-    // It will automatically navigate to /dashboard after the theoretical animation plays.
-    const timer = setTimeout(() => {
-      navigate('/dashboard');
-    }, 2500);
-
-    return () => clearTimeout(timer);
-  }, [navigate]);
+  // Removed forced timer-based navigation to comply with clean routing requirements.
+  // Navigation now only occurs via user action or direct auth-state changes.
+  const handleProceed = () => {
+    navigate('/dashboard');
+  };
 
   return (
     <div style={{
@@ -27,6 +23,33 @@ const CorridorScene = () => {
       fontFamily: 'Inter, sans-serif'
     }}>
       <h2 style={{ letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '20px' }}>Access Authorized</h2>
+      <button 
+        onClick={handleProceed}
+        style={{
+          background: 'rgba(61,189,170,0.1)',
+          border: '1px solid #3dbdaa',
+          color: '#3dbdaa',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          letterSpacing: '1px',
+          textTransform: 'uppercase',
+          transition: 'all 0.3s ease',
+          marginBottom: '20px'
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.background = '#3dbdaa';
+          e.target.style.color = '#0a0f1d';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.background = 'rgba(61,189,170,0.1)';
+          e.target.style.color = '#3dbdaa';
+        }}
+      >
+        Proceed to Dashboard
+      </button>
       <div style={{
         width: '50px',
         height: '50px',

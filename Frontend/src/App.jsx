@@ -9,31 +9,32 @@ import QueueDashboard from './pages/QueueDashboard';
 import ProtectedRoute from './routes/ProtectedRoute';
 import CorridorScene from './components/CorridorScene';
 
-// ─── Protected Route Wrapper ──────────────────────────────────────────────────
+// ─── Main Routing Logic ──────────────────────────────────────────────────────
 function MainRouter() {
   const { isAuthenticated } = useAuth();
-  
+
   return (
     <Routes>
+      {/* 
+          Public Route: Root opens LandingPage by default.
+          Redirects to /dashboard ONLY if already authenticated.
+      */}
       <Route path="/" element={
         isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
       } />
-      <Route path="/transition" element={<CorridorScene />} />
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <AdminDashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/queue" element={
-        <ProtectedRoute>
-          <QueueDashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/dashboard/ward/:id" element={
-        <ProtectedRoute>
-          <WardDetailPage />
-        </ProtectedRoute>
-      } />
+
+      {/* 
+          Protected Routes: Wrapped in ProtectedRoute layout.
+          If not authenticated, these will redirect back to "/".
+      */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<AdminDashboard />} />
+        <Route path="/queue" element={<QueueDashboard />} />
+        <Route path="/ward/:id" element={<WardDetailPage />} />
+        <Route path="/transition" element={<CorridorScene />} />
+      </Route>
+
+      {/* Fallback for undefined paths */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
