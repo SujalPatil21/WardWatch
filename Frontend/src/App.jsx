@@ -159,6 +159,11 @@ function LoginPanel() {
     setError('');
     setSuccess('');
 
+<<<<<<< HEAD
+    const endpoint = isRegistering ? 'http://localhost:8080/auth/register' : 'http://localhost:8080/auth/login';
+
+=======
+>>>>>>> ba0d55f842c89947916ea4a95d4ffc7aecc5b7b7
     try {
       if (isRegistering) {
         // ── REGISTER ────────────────────────────────────────────────────────
@@ -168,16 +173,32 @@ function LoginPanel() {
         setIsRegistering(false);
         setPassword('');
       } else {
+<<<<<<< HEAD
+         window.location.href = '/dashboard'; // Proceed to next page on success
+=======
         // ── LOGIN ────────────────────────────────────────────────────────────
         // Response: { message: "Login successful", role: "STAFF" | "ADMIN" }
         const data = await apiLogin({ username, password });
         // Persist credentials + role, trigger routing
         login(username, password, data.role);
+>>>>>>> ba0d55f842c89947916ea4a95d4ffc7aecc5b7b7
       }
     } catch (err) {
       setError(err.message || 'System error. Please verify input.');
     } finally {
       setLoading(false);
+<<<<<<< HEAD
+      // Fallback for demo purposes if backend isn't actively running
+      if (err.message.includes('Failed to fetch') || err.message.includes('JSON')) {
+          if (!isRegistering) {
+             alert(`Simulated Login Success for [ ${role.toUpperCase()} ]\nRouting to internal environment.`);
+             window.location.href = '/dashboard';
+          }
+      } else {
+        setError(err.message || 'System error. Please verify input.');
+      }
+=======
+>>>>>>> ba0d55f842c89947916ea4a95d4ffc7aecc5b7b7
     }
   };
 

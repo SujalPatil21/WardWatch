@@ -101,21 +101,14 @@ public class QueueService {
             Long bedId = availableBed.getId();
 
             try {
-                bedService.assignBed(bedId, queue.getName(), "Auto", queue.getType());
+                bedService.assignBed(bedId, queue.getName(), "Auto");
             } catch (Exception e) {
                 throw new RuntimeException("Failed to assign bed: " + e.getMessage());
             }
 
             queue.setBedId(bedId);
             queue.setStatus(QueueStatus.DISCHARGE_PENDING);
-            LocalDateTime now = LocalDateTime.now();
-            queue.setAdmittedAt(now);
-            long nowMs = System.currentTimeMillis();
-            if ("ICU".equalsIgnoreCase(queue.getType())) {
-                queue.setEstimatedDischargeTime(nowMs + (6 * 60 * 60 * 1000L));
-            } else {
-                queue.setEstimatedDischargeTime(nowMs + (4 * 60 * 60 * 1000L));
-            }
+            queue.setAdmittedAt(LocalDateTime.now());
             log.info("ADMIT: queueId={} bedId={} wardId={}", queue.getId(), bedId, wardId);
 
         } else if ("discharge".equalsIgnoreCase(action)) {
