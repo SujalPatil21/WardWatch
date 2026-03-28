@@ -56,22 +56,32 @@ public class AnalyticsService {
         long incoming = queueRepository.countByStatus(QueueStatus.WAITING);
         long dischargePending = queueRepository.countByStatus(QueueStatus.DISCHARGE_PENDING);
 
-        long futureAvailable = available + dischargePending - incoming;
-        if (futureAvailable < 0) {
-            futureAvailable = 0;
-        }
+        // Weighted confidence model
+        double effectiveDischarge = dischargePending * 0.8;
+        double effectiveIncoming  = incoming * 0.9;
+        long normalizedFuture = Math.max(0, (long) Math.floor(available + effectiveDischarge - effectiveIncoming));
+        Map<String, Object> raw = new HashMap<>();
+        raw.put("availableBeds", available);
+        raw.put("dischargePending", dischargePending);
+        raw.put("incomingQueue", incoming);
 
-        return Map.of(
-                "totalBeds", total,
-                "availableBeds", available,
-                "occupiedBeds", occupied,
-                "cleaningBeds", cleaning,
-                "reservedBeds", reserved,
-                "incomingQueue", incoming,
-                "dischargePendingQueue", dischargePending,
-                "futureAvailable", futureAvailable,
-                "timestamp", System.currentTimeMillis()
-        );
+        Map<String, Object> weighted = new HashMap<>();
+        weighted.put("effectiveDischarge", effectiveDischarge);
+        weighted.put("effectiveIncoming", effectiveIncoming);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalBeds", total);
+        result.put("availableBeds", available);
+        result.put("occupiedBeds", occupied);
+        result.put("cleaningBeds", cleaning);
+        result.put("reservedBeds", reserved);
+        result.put("incomingQueue", incoming);
+        result.put("dischargePendingQueue", dischargePending);
+        result.put("futureAvailable", normalizedFuture);
+        result.put("raw", raw);
+        result.put("weighted", weighted);
+        result.put("timestamp", System.currentTimeMillis());
+        return result;
     }
 
     // -------------------------------------------------------------------------
@@ -89,23 +99,34 @@ public class AnalyticsService {
         long incoming = queueRepository.countByStatus(QueueStatus.WAITING);
         long dischargePending = queueRepository.countByStatus(QueueStatus.DISCHARGE_PENDING);
 
-        long futureAvailable = available + dischargePending - incoming;
-        if (futureAvailable < 0) {
-            futureAvailable = 0;
-        }
+        // Weighted confidence model
+        double effectiveDischarge = dischargePending * 0.8;
+        double effectiveIncoming  = incoming * 0.9;
+        long normalizedFuture = Math.max(0, (long) Math.floor(available + effectiveDischarge - effectiveIncoming));
 
-        return Map.of(
-                "wardId", wardId,
-                "totalBeds", total,
-                "availableBeds", available,
-                "occupiedBeds", occupied,
-                "cleaningBeds", cleaning,
-                "reservedBeds", reserved,
-                "incomingQueue", incoming,
-                "dischargePendingQueue", dischargePending,
-                "futureAvailable", futureAvailable,
-                "timestamp", System.currentTimeMillis()
-        );
+        Map<String, Object> raw = new HashMap<>();
+        raw.put("availableBeds", available);
+        raw.put("dischargePending", dischargePending);
+        raw.put("incomingQueue", incoming);
+
+        Map<String, Object> weighted = new HashMap<>();
+        weighted.put("effectiveDischarge", effectiveDischarge);
+        weighted.put("effectiveIncoming", effectiveIncoming);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("wardId", wardId);
+        result.put("totalBeds", total);
+        result.put("availableBeds", available);
+        result.put("occupiedBeds", occupied);
+        result.put("cleaningBeds", cleaning);
+        result.put("reservedBeds", reserved);
+        result.put("incomingQueue", incoming);
+        result.put("dischargePendingQueue", dischargePending);
+        result.put("futureAvailable", normalizedFuture);
+        result.put("raw", raw);
+        result.put("weighted", weighted);
+        result.put("timestamp", System.currentTimeMillis());
+        return result;
     }
 
     // -------------------------------------------------------------------------
