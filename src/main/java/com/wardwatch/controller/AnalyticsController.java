@@ -17,7 +17,10 @@ public class AnalyticsController {
     }
 
     @GetMapping("/capacity")
-    public ResponseEntity<Map<String, Object>> getCapacity() {
+    public ResponseEntity<Map<String, Object>> getCapacity(@org.springframework.web.bind.annotation.RequestParam(required = false) Long wardId) {
+        if (wardId != null) {
+            return ResponseEntity.ok(analyticsService.getCapacityForWard(wardId));
+        }
         return ResponseEntity.ok(analyticsService.getCapacity());
     }
 

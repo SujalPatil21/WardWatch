@@ -32,9 +32,10 @@ public class QueueController {
 
     @PostMapping("/{id}/complete")
     public ResponseEntity<?> completeAction(@PathVariable Long id,
-                                            @RequestParam String action) {
+                                            @RequestParam String action,
+                                            @RequestParam(required = false) Long wardId) {
         try {
-            Queue updated = queueService.completeAction(id, action);
+            Queue updated = queueService.completeAction(id, action, wardId);
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

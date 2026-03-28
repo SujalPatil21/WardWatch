@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BedService {
@@ -79,6 +80,16 @@ public class BedService {
         bed.setLastUpdated(System.currentTimeMillis());
 
         return bedRepository.save(bed);
+    }
+
+    /**
+     * Find first available bed in a specific ward.
+     * Returns Optional.empty() if no bed is available in that ward.
+     */
+    public Optional<Bed> findAvailableBedInWard(Long wardId) {
+        return bedRepository.findByStatusAndWardId("AVAILABLE", wardId)
+                .stream()
+                .findFirst();
     }
 
     @Scheduled(fixedDelayString = "${bed.cleaning.check.interval.ms:60000}")

@@ -1,4 +1,4 @@
-package com.wardwatch.dev2.model;
+package com.wardwatch.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,16 +13,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "beds")
-public class Bed {
+@Table(name = "wards")
+public class Ward {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String status; // OCCUPIED, AVAILABLE, CLEANING, RESERVED
-    private String patientName;
-    private String doctor;
-    private Long lastUpdated;
-    private Long wardId;
+    private String name;
 }

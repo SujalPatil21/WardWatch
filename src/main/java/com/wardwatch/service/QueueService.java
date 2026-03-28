@@ -50,8 +50,21 @@ public class QueueService {
         return saved;
     }
 
+    /**
+     * Backward-compatible overload: no wardId → uses global bed pool (original behavior).
+     */
     @Transactional
     public Queue completeAction(Long id, String action) {
+        return completeAction(id, action, null);
+    }
+
+    /**
+     * Primary method: wardId is optional.
+     * If wardId is provided and action is "admit", a bed is sourced only from that ward.
+     * If wardId is null and action is "admit", falls back to the original global-pool behavior.
+     */
+    @Transactional
+    public Queue completeAction(Long id, String action, Long wardId) {
         Queue queue = queueRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Queue entry not found with id: " + id));
 
@@ -67,16 +80,23 @@ public class QueueService {
                 throw new RuntimeException("Bed already assigned to this queue entry");
             }
 
-            List<Bed> beds = bedService.getAllBeds();
+            Bed availableBed;
 
-            if (beds == null || beds.isEmpty()) {
-                throw new RuntimeException("No beds available");
+            if (wardId != null) {
+                // Ward-specific bed assignment
+                availableBed = bedService.findAvailableBedInWard(wardId)
+                        .orElseThrow(() -> new RuntimeException("No available bed in ward: " + wardId));
+            } else {
+                // Global bed assignment (original behavior)
+                List<Bed> beds = bedService.getAllBeds();
+                if (beds == null || beds.isEmpty()) {
+                    throw new RuntimeException("No beds available");
+                }
+                availableBed = beds.stream()
+                        .filter(b -> "AVAILABLE".equalsIgnoreCase(b.getStatus()))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("No beds available"));
             }
-
-            Bed availableBed = beds.stream()
-                    .filter(b -> "AVAILABLE".equalsIgnoreCase(b.getStatus()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("No beds available"));
 
             Long bedId = availableBed.getId();
 
@@ -89,7 +109,7 @@ public class QueueService {
             queue.setBedId(bedId);
             queue.setStatus(QueueStatus.DISCHARGE_PENDING);
             queue.setAdmittedAt(LocalDateTime.now());
-            log.info("ADMIT: queueId={} bedId={}", queue.getId(), bedId);
+            log.info("ADMIT: queueId={} bedId={} wardId={}", queue.getId(), bedId, wardId);
 
         } else if ("discharge".equalsIgnoreCase(action)) {
             if (queue.getStatus() != QueueStatus.DISCHARGE_PENDING) {

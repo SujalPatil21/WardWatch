@@ -3,7 +3,9 @@ package com.wardwatch.service;
 import com.wardwatch.dev2.model.Bed;
 import com.wardwatch.dev2.repository.BedRepository;
 import com.wardwatch.model.Queue;
+import com.wardwatch.model.Ward;
 import com.wardwatch.repository.QueueRepository;
+import com.wardwatch.repository.WardRepository;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -17,15 +19,18 @@ public class WebSocketEventService {
     private final SimpMessagingTemplate messagingTemplate;
     private final BedRepository bedRepository;
     private final QueueRepository queueRepository;
+    private final WardRepository wardRepository;
     private final AnalyticsService analyticsService;
 
     public WebSocketEventService(SimpMessagingTemplate messagingTemplate,
                                  BedRepository bedRepository,
                                  QueueRepository queueRepository,
+                                 WardRepository wardRepository,
                                  AnalyticsService analyticsService) {
         this.messagingTemplate = messagingTemplate;
         this.bedRepository = bedRepository;
         this.queueRepository = queueRepository;
+        this.wardRepository = wardRepository;
         this.analyticsService = analyticsService;
     }
 
@@ -36,11 +41,20 @@ public class WebSocketEventService {
                 .toList();
 
         List<Queue> queue = queueRepository.findAll();
+        List<Ward> wards = wardRepository.findAll();
 
         Map<String, Object> alerts = analyticsService.getAlerts();
-        Map<String, Object> capacity = analyticsService.getCapacity();
+
+        // Capacity: overall + perWard
+        Map<String, Object> overall = analyticsService.getCapacity();
+        Map<String, Object> perWard = analyticsService.getCapacityPerWard();
+
+        Map<String, Object> capacity = new HashMap<>();
+        capacity.put("overall", overall);
+        capacity.put("perWard", perWard);
 
         Map<String, Object> data = new HashMap<>();
+        data.put("wards", wards);
         data.put("beds", beds);
         data.put("queue", queue);
         data.put("alerts", alerts);
