@@ -1,77 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import WardGrid from '../components/Ward/WardGrid';
-import { fetchWards, fetchBeds, fetchAlerts } from '../services/wardService';
+import { useLiveData } from '../context/LiveDataContext';
 
 /**
- * AdminDashboard: Primary hospital overview.
+ * AdminDashboard: Primary hospital overview (WebSocket Driven).
  */
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [wards, setWards] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { beds = [], queue = [], wards = [], alerts = { cleaningAlerts: [], capacityAlerts: [] }, capacity = {} } = useLiveData();
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      // Parallel fetch for speed and synchronization
-      const [wardsData, bedsData, alertsData] = await Promise.allSettled([
-        fetchWards(),
-        fetchBeds(),
-        fetchAlerts()
-      ]);
+  const loading = wards.length === 0;
 
-      const wardsList = wardsData.status === 'fulfilled' ? (wardsData.value || []) : [];
-      const bedsList = bedsData.status === 'fulfilled' ? (bedsData.value || []) : [];
-      const alerts = alertsData.status === 'fulfilled' ? (alertsData.value || { cleaningAlerts: [], capacityAlerts: [] }) : { cleaningAlerts: [], capacityAlerts: [] };
+  // Map bedId -> wardId for cleaning alerts
+  const bedToWardMap = beds.reduce((acc, bed) => {
+    acc[bed.id] = bed.wardId;
+    return acc;
+  }, {});
 
-      console.log("ALERTS API RESPONSE:", alerts);
-
-      // Map bedId -> wardId for cleaning alerts
-      const bedToWardMap = bedsList.reduce((acc, bed) => {
-        acc[bed.id] = bed.wardId;
-        return acc;
-      }, {});
-
-      // Calculate capacity and map alerts per ward
-      const enrichedWards = wardsList.map(ward => {
-        const wardBeds = bedsList.filter(b => b.wardId === ward.id);
-        
-        // Filter cleaning alerts for this ward
-        const wardCleaning = (alerts.cleaningAlerts || [])
-          .filter(a => {
-            const mappedWardId = bedToWardMap[a.bedId];
-            return String(mappedWardId) === String(ward.id);
-          }); // Keep original type: CLEANING_DELAY
-
-        // Filter capacity alerts for this ward
-        const wardCapacity = (alerts.capacityAlerts || [])
-          .filter(a => String(a.wardId) === String(ward.id)); // Keep original types: CAPACITY_CRITICAL, CAPACITY_WARNING
-
-        const mappedAlertsForWard = [...wardCleaning, ...wardCapacity];
-        if (mappedAlertsForWard.length > 0) {
-          console.log(`Mapped Alerts for Ward ${ward.name}:`, mappedAlertsForWard);
-        }
-
-        return {
-          ...ward,
-          totalBeds: wardBeds.length,
-          occupiedBeds: wardBeds.filter(b => b.status === 'OCCUPIED').length,
-          alerts: mappedAlertsForWard
-        };
+  // Calculate capacity and map alerts per ward
+  const enrichedWards = wards.map(ward => {
+    const wardBeds = beds.filter(b => b.wardId === ward.id);
+    
+    // Filter cleaning alerts for this ward
+    const wardCleaning = (alerts?.cleaningAlerts || [])
+      .filter(a => {
+        const mappedWardId = bedToWardMap[a.bedId];
+        return String(mappedWardId) === String(ward.id);
       });
 
-      setWards(enrichedWards);
-    } catch (err) {
-      console.error('[AdminDashboard] Critical failure loading data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Filter capacity alerts for this ward
+    const wardCapacity = (alerts?.capacityAlerts || [])
+      .filter(a => String(a.wardId) === String(ward.id));
 
-  useEffect(() => {
-    loadData();
-  }, []);
+    return {
+      ...ward,
+      totalBeds: wardBeds.length,
+      occupiedBeds: wardBeds.filter(b => b.status === 'OCCUPIED').length,
+      alerts: [...wardCleaning, ...wardCapacity]
+    };
+  });
 
   return (
     <div className="dashboard-container" style={{ display: 'flex', minHeight: '100vh', background: '#0f172a' }}>
@@ -148,11 +116,11 @@ export default function AdminDashboard() {
               borderRadius: '50%',
               animation: 'spin 1s linear infinite'
             }} />
-            <div style={{ color: '#64748b', fontSize: '14px', fontWeight: '500' }}>Synchronizing hospital state...</div>
+            <div style={{ color: '#64748b', fontSize: '14px', fontWeight: '500' }}>Listening for live data...</div>
           </div>
         ) : (
           <div className="fade-in" style={{ animation: 'fadeIn 0.5s ease-out forwards' }}>
-            <WardGrid wards={wards} />
+            <WardGrid wards={enrichedWards} />
           </div>
         )}
       </main>

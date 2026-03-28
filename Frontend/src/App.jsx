@@ -1,31 +1,48 @@
 import React, { useEffect, useState } from 'react';
 import './index.css';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { apiLogin, apiRegister } from './api/client';
 import AdminDashboard from './pages/AdminDashboard';
 import WardDetailPage from './pages/WardDetailPage';
 import QueueDashboard from './pages/QueueDashboard';
+import ProtectedRoute from './routes/ProtectedRoute';
+import CorridorScene from './components/CorridorScene';
 
 // ─── Protected Route Wrapper ──────────────────────────────────────────────────
-function Router() {
-  const { isAuthenticated, role } = useAuth();
-
-  if (!isAuthenticated) return <LandingPage />;
-  if (role === 'ADMIN' || role === 'STAFF') return <AdminDashboard />;
-  return <LandingPage />;
+function MainRouter() {
+  const { isAuthenticated } = useAuth();
+  
+  return (
+    <Routes>
+      <Route path="/" element={
+        isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
+      } />
+      <Route path="/transition" element={<CorridorScene />} />
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/queue" element={
+        <ProtectedRoute>
+          <QueueDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/dashboard/ward/:id" element={
+        <ProtectedRoute>
+          <WardDetailPage />
+        </ProtectedRoute>
+      } />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 export default function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route path="/" element={<Router />} />
-        <Route path="/dashboard" element={<AdminDashboard />} />
-        <Route path="/queue" element={<QueueDashboard />} />
-        <Route path="/dashboard/ward/:id" element={<WardDetailPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <MainRouter />
     </AuthProvider>
   );
 }
@@ -154,6 +171,7 @@ function LandingPage() {
 // ─── Login / Register Panel ───────────────────────────────────────────────────
 function LoginPanel() {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [role, setRole] = useState('admin');           // UI toggle only
   const [isRegistering, setIsRegistering] = useState(false);
   const [username, setUsername] = useState('');
@@ -181,13 +199,9 @@ function LoginPanel() {
         const data = await apiLogin({ username, password });
         // Persist credentials in localStorage for Basic Auth on future requests
         const resolvedRole = data?.role || 'STAFF';
-        console.log("[WardWatch] BEFORE LOGIN CALL", username, "hasPassword:", !!password);
+        navigate('/transition');
         login(username, password, resolvedRole);
         console.log("[WardWatch] AFTER LOGIN CALL", localStorage.getItem("ww_username"));
-        
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 500);
       }
     } catch (err) {
       // Fallback for demo / backend-down scenarios
@@ -198,14 +212,11 @@ function LoginPanel() {
       ) {
         if (!isRegistering) {
           // Still persist so API calls work if backend comes up
-          console.log("[WardWatch] DEMO MODE: BEFORE LOGIN CALL", username);
+          navigate('/transition');
           login(username, password, role.toUpperCase());
           console.log("[WardWatch] DEMO MODE: AFTER LOGIN CALL", localStorage.getItem("ww_username"));
 
           alert(`Demo mode: simulated login as ${role.toUpperCase()}`);
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 500);
         }
       } else {
         setError(err.message || 'System error. Please verify input.');
