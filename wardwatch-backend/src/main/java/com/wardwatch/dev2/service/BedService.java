@@ -20,7 +20,7 @@ public class BedService {
     private final WebSocketEventService webSocketEventService;
 
     public BedService(BedRepository bedRepository,
-                      @Value("${bed.cleaning.duration.minutes:60}") long cleaningDurationMinutes,
+                      @Value("${bed.cleaning.duration.minutes:7}") long cleaningDurationMinutes,
                       @Lazy WebSocketEventService webSocketEventService) {
         this.bedRepository = bedRepository;
         this.cleaningDurationMs = cleaningDurationMinutes * 60 * 1000L;
@@ -84,7 +84,6 @@ public class BedService {
 
     /**
      * Find first available bed in a specific ward.
-     * Returns Optional.empty() if no bed is available in that ward.
      */
     public Optional<Bed> findAvailableBedInWard(Long wardId) {
         return bedRepository.findByStatusAndWardId("AVAILABLE", wardId)
@@ -92,20 +91,36 @@ public class BedService {
                 .findFirst();
     }
 
+    /**
+     * 🔴 ALERT LOGIC — Cleaning taking more than 5 minutes
+     */
+    public List<Bed> getDelayedCleaningBeds() {
+        long now = System.currentTimeMillis();
+
+        return bedRepository.findByStatus("CLEANING")
+                .stream()
+                .filter(bed -> {
+                    Long lastUpdated = bed.getLastUpdated();
+                    return lastUpdated != null && (now - lastUpdated >= 5 * 60 * 1000);
+                })
+                .toList();
+    }
+
     @Scheduled(fixedDelayString = "${bed.cleaning.check.interval.ms:60000}")
     public void autoReleaseCleaningBeds() {
         long now = System.currentTimeMillis();
         List<Bed> cleaningBeds = bedRepository.findByStatus("CLEANING");
+
         if (cleaningBeds.isEmpty()) {
             return;
         }
 
         boolean anyReleased = false;
+
         for (Bed bed : cleaningBeds) {
             Long lastUpdated = bed.getLastUpdated();
-            if (lastUpdated == null) {
-                continue;
-            }
+            if (lastUpdated == null) continue;
+
             if (now - lastUpdated >= cleaningDurationMs) {
                 bed.setStatus("AVAILABLE");
                 bed.setLastUpdated(now);
