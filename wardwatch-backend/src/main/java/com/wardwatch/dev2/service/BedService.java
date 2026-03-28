@@ -20,7 +20,7 @@ public class BedService {
     private final WebSocketEventService webSocketEventService;
 
     public BedService(BedRepository bedRepository,
-                      @Value("${bed.cleaning.duration.minutes:15}") long cleaningDurationMinutes,
+                      @Value("${bed.cleaning.duration.minutes:60}") long cleaningDurationMinutes,
                       @Lazy WebSocketEventService webSocketEventService) {
         this.bedRepository = bedRepository;
         this.cleaningDurationMs = cleaningDurationMinutes * 60 * 1000L;

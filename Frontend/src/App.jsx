@@ -1,27 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import './index.css';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { apiLogin, apiRegister } from './api/client';
-import StaffDashboard from './pages/StaffDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import WardDetailPage from './pages/WardDetailPage';
+import QueueDashboard from './pages/QueueDashboard';
 
-// ─── Root: wraps everything in AuthProvider + handles routing ─────────────────
-export default function App() {
-  return (
-    <AuthProvider>
-      <Router />
-    </AuthProvider>
-  );
-}
-
-// ─── State-based Router ───────────────────────────────────────────────────────
+// ─── Protected Route Wrapper ──────────────────────────────────────────────────
 function Router() {
   const { isAuthenticated, role } = useAuth();
 
   if (!isAuthenticated) return <LandingPage />;
-  if (role === 'ADMIN') return <AdminDashboard />;
-  if (role === 'STAFF') return <StaffDashboard />;
+  if (role === 'ADMIN' || role === 'STAFF') return <AdminDashboard />;
   return <LandingPage />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Router />} />
+        <Route path="/dashboard" element={<AdminDashboard />} />
+        <Route path="/queue" element={<QueueDashboard />} />
+        <Route path="/dashboard/ward/:id" element={<WardDetailPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AuthProvider>
+  );
+}
+
+// ─── Stub for QueueHistory if needed, but QueueDashboard is the main one ─────
+function QueueHistory() {
+  return <QueueDashboard />;
 }
 
 // ─── InView hook ─────────────────────────────────────────────────────────────
@@ -159,46 +170,48 @@ function LoginPanel() {
     setError('');
     setSuccess('');
 
-<<<<<<< HEAD
-    const endpoint = isRegistering ? 'http://localhost:8080/auth/register' : 'http://localhost:8080/auth/login';
-
-=======
->>>>>>> ba0d55f842c89947916ea4a95d4ffc7aecc5b7b7
     try {
       if (isRegistering) {
-        // ── REGISTER ────────────────────────────────────────────────────────
-        // Backend always creates STAFF — role toggle is irrelevant here
         await apiRegister({ username, password });
         setSuccess('Registration successful. Please log in.');
         setIsRegistering(false);
         setPassword('');
       } else {
-<<<<<<< HEAD
-         window.location.href = '/dashboard'; // Proceed to next page on success
-=======
-        // ── LOGIN ────────────────────────────────────────────────────────────
-        // Response: { message: "Login successful", role: "STAFF" | "ADMIN" }
+        // Call backend to verify credentials
         const data = await apiLogin({ username, password });
-        // Persist credentials + role, trigger routing
-        login(username, password, data.role);
->>>>>>> ba0d55f842c89947916ea4a95d4ffc7aecc5b7b7
+        // Persist credentials in localStorage for Basic Auth on future requests
+        const resolvedRole = data?.role || 'STAFF';
+        console.log("[WardWatch] BEFORE LOGIN CALL", username, "hasPassword:", !!password);
+        login(username, password, resolvedRole);
+        console.log("[WardWatch] AFTER LOGIN CALL", localStorage.getItem("ww_username"));
+        
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 500);
       }
     } catch (err) {
-      setError(err.message || 'System error. Please verify input.');
-    } finally {
-      setLoading(false);
-<<<<<<< HEAD
-      // Fallback for demo purposes if backend isn't actively running
-      if (err.message.includes('Failed to fetch') || err.message.includes('JSON')) {
-          if (!isRegistering) {
-             alert(`Simulated Login Success for [ ${role.toUpperCase()} ]\nRouting to internal environment.`);
-             window.location.href = '/dashboard';
-          }
+      // Fallback for demo / backend-down scenarios
+      if (
+        err.message.includes('Failed to fetch') ||
+        err.message.includes('Cannot reach server') ||
+        err.message.includes('JSON')
+      ) {
+        if (!isRegistering) {
+          // Still persist so API calls work if backend comes up
+          console.log("[WardWatch] DEMO MODE: BEFORE LOGIN CALL", username);
+          login(username, password, role.toUpperCase());
+          console.log("[WardWatch] DEMO MODE: AFTER LOGIN CALL", localStorage.getItem("ww_username"));
+
+          alert(`Demo mode: simulated login as ${role.toUpperCase()}`);
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 500);
+        }
       } else {
         setError(err.message || 'System error. Please verify input.');
       }
-=======
->>>>>>> ba0d55f842c89947916ea4a95d4ffc7aecc5b7b7
+    } finally {
+      setLoading(false);
     }
   };
 

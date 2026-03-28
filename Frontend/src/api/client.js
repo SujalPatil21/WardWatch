@@ -7,8 +7,11 @@ const BASE_URL = 'http://localhost:8080';
 export function getAuthHeader() {
   const username = localStorage.getItem('ww_username');
   const password = localStorage.getItem('ww_password');
+  console.log("[WardWatch] Storage Check:", { username, hasPassword: !!password });
   if (!username || !password) return null;
-  return `Basic ${btoa(`${username}:${password}`)}`;
+  const header = `Basic ${btoa(`${username}:${password}`)}`;
+  console.log("[WardWatch] Generated Header:", header);
+  return header;
 }
 
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
@@ -23,6 +26,7 @@ export async function api(path, options = {}) {
 
   let res;
   try {
+    console.log(`[WardWatch] Fetching: ${BASE_URL}${path}`, { method: options.method || 'GET', headers });
     res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   } catch (err) {
     console.error('[WardWatch] Network error:', err.message);
