@@ -1,10 +1,10 @@
-package com.wardwatch.backend.service;
+package com.wardwatch.service;
 
-import com.wardwatch.backend.dto.AuthRequest;
-import com.wardwatch.backend.dto.AuthResponse;
-import com.wardwatch.backend.model.Role;
-import com.wardwatch.backend.model.User;
-import com.wardwatch.backend.repository.UserRepository;
+import com.wardwatch.dto.AuthRequest;
+import com.wardwatch.dto.AuthResponse;
+import com.wardwatch.model.Role;
+import com.wardwatch.model.User;
+import com.wardwatch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -1,7 +1,7 @@
-package com.wardwatch.backend.controller;
+package com.wardwatch.controller;
 
-import com.wardwatch.backend.model.Queue;
-import com.wardwatch.backend.service.QueueService;
+import com.wardwatch.model.Queue;
+import com.wardwatch.service.QueueService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

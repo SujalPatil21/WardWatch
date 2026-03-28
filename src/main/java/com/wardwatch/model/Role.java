@@ -1,4 +1,4 @@
-package com.wardwatch.backend.model;
+package com.wardwatch.model;
 
 public enum Role {
     STAFF,

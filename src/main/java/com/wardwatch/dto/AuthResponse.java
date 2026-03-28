@@ -1,6 +1,6 @@
-package com.wardwatch.backend.dto;
+package com.wardwatch.dto;
 
-import com.wardwatch.backend.model.Role;
+import com.wardwatch.model.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

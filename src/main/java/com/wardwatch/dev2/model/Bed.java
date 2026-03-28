@@ -1,4 +1,4 @@
-package com.wardwatch.backend.dev2.model;
+package com.wardwatch.dev2.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

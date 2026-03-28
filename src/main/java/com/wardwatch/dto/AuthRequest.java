@@ -1,4 +1,4 @@
-package com.wardwatch.backend.dto;
+package com.wardwatch.dto;
 
 import lombok.Data;
 

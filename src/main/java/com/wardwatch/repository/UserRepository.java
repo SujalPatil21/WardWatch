@@ -1,6 +1,6 @@
-package com.wardwatch.backend.repository;
+package com.wardwatch.repository;
 
-import com.wardwatch.backend.model.User;
+import com.wardwatch.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

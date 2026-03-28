@@ -1,8 +1,8 @@
-package com.wardwatch.backend.controller;
+package com.wardwatch.controller;
 
-import com.wardwatch.backend.dto.AuthRequest;
-import com.wardwatch.backend.dto.AuthResponse;
-import com.wardwatch.backend.service.AuthService;
+import com.wardwatch.dto.AuthRequest;
+import com.wardwatch.dto.AuthResponse;
+import com.wardwatch.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

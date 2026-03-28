@@ -1,6 +1,6 @@
-package com.wardwatch.backend.config;
+package com.wardwatch.config;
 
-import com.wardwatch.backend.repository.UserRepository;
+import com.wardwatch.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,6 +26,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/**").hasAnyRole("STAFF", "ADMIN")
                         .anyRequest().hasRole("STAFF")
                 )

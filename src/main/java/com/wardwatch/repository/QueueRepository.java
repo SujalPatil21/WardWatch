@@ -1,7 +1,7 @@
-package com.wardwatch.backend.repository;
+package com.wardwatch.repository;
 
-import com.wardwatch.backend.model.Queue;
-import com.wardwatch.backend.model.QueueStatus;
+import com.wardwatch.model.Queue;
+import com.wardwatch.model.QueueStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

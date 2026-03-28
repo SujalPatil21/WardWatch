@@ -1,10 +1,10 @@
-package com.wardwatch.backend.service;
+package com.wardwatch.service;
 
-import com.wardwatch.backend.dev2.model.Bed;
-import com.wardwatch.backend.dev2.repository.BedRepository;
-import com.wardwatch.backend.model.Queue;
-import com.wardwatch.backend.model.QueueStatus;
-import com.wardwatch.backend.repository.QueueRepository;
+import com.wardwatch.dev2.model.Bed;
+import com.wardwatch.dev2.repository.BedRepository;
+import com.wardwatch.model.Queue;
+import com.wardwatch.model.QueueStatus;
+import com.wardwatch.repository.QueueRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 

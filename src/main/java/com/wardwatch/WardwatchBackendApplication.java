@@ -5,8 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = {
-        "com.wardwatch.backend",
-        "com.wardwatch.backend.dev2"
+        "com.wardwatch",
+        "com.wardwatch.dev2"
 })
 @EnableScheduling
 public class WardwatchBackendApplication {

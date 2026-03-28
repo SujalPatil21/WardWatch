@@ -1,8 +1,8 @@
-package com.wardwatch.backend.config;
+package com.wardwatch.config;
 
-import com.wardwatch.backend.model.Role;
-import com.wardwatch.backend.model.User;
-import com.wardwatch.backend.repository.UserRepository;
+import com.wardwatch.model.Role;
+import com.wardwatch.model.User;
+import com.wardwatch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

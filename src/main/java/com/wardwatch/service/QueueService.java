@@ -1,13 +1,15 @@
-package com.wardwatch.backend.service;
+package com.wardwatch.service;
 
-import com.wardwatch.backend.dev2.model.Bed;
-import com.wardwatch.backend.dev2.service.BedService;
-import com.wardwatch.backend.model.Queue;
-import com.wardwatch.backend.model.QueueStatus;
-import com.wardwatch.backend.repository.QueueRepository;
+import com.wardwatch.dev2.model.Bed;
+import com.wardwatch.dev2.service.BedService;
+import com.wardwatch.model.Queue;
+import com.wardwatch.model.QueueStatus;
+import com.wardwatch.repository.QueueRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,10 +21,14 @@ public class QueueService {
 
     private final QueueRepository queueRepository;
     private final BedService bedService;
+    private final WebSocketEventService webSocketEventService;
 
-    public QueueService(QueueRepository queueRepository, BedService bedService) {
+    public QueueService(QueueRepository queueRepository,
+                        BedService bedService,
+                        @Lazy WebSocketEventService webSocketEventService) {
         this.queueRepository = queueRepository;
         this.bedService = bedService;
+        this.webSocketEventService = webSocketEventService;
     }
 
     public List<Queue> getAllActive() {
@@ -39,9 +45,12 @@ public class QueueService {
         queue.setType(type);
         queue.setStatus(QueueStatus.WAITING);
 
-        return queueRepository.save(queue);
+        Queue saved = queueRepository.save(queue);
+        webSocketEventService.sendSystemUpdate();
+        return saved;
     }
 
+    @Transactional
     public Queue completeAction(Long id, String action) {
         Queue queue = queueRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Queue entry not found with id: " + id));
@@ -107,6 +116,7 @@ public class QueueService {
 
         Queue saved = queueRepository.save(queue);
         log.info("QUEUE SAVE: queueId={} status={} bedId={}", saved.getId(), saved.getStatus(), saved.getBedId());
+        webSocketEventService.sendSystemUpdate();
         return saved;
     }
 }

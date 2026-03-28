@@ -1,7 +1,7 @@
-package com.wardwatch.backend.dev2.controller;
+package com.wardwatch.dev2.controller;
 
-import com.wardwatch.backend.dev2.model.Bed;
-import com.wardwatch.backend.dev2.service.BedService;
+import com.wardwatch.dev2.model.Bed;
+import com.wardwatch.dev2.service.BedService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
