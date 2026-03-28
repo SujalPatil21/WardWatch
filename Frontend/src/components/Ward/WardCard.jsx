@@ -43,6 +43,8 @@ const WardCard = ({ ward }) => {
   const allAlerts = sortAlerts(ward.alerts || []);
   const displayedAlerts = allAlerts.slice(0, 3);
 
+  console.log(`WardCard [${ward.name}] Alerts:`, displayedAlerts);
+
   return (
     <div
       className="ward-card"
@@ -117,8 +119,8 @@ const WardCard = ({ ward }) => {
         
         {displayedAlerts.length > 0 ? (
           displayedAlerts.map((alert, idx) => {
-            const isCleaning = alert.type === 'CLEANING';
-            const message = transformAlert(alert, ward.occupiedBeds, ward.totalBeds);
+            const isCleaning = alert.type === 'CLEANING_DELAY';
+            const message = transformAlert(alert);
             if (!message) return null;
 
             return (

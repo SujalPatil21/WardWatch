@@ -25,6 +25,8 @@ export default function AdminDashboard() {
       const bedsList = bedsData.status === 'fulfilled' ? (bedsData.value || []) : [];
       const alerts = alertsData.status === 'fulfilled' ? (alertsData.value || { cleaningAlerts: [], capacityAlerts: [] }) : { cleaningAlerts: [], capacityAlerts: [] };
 
+      console.log("ALERTS API RESPONSE:", alerts);
+
       // Map bedId -> wardId for cleaning alerts
       const bedToWardMap = bedsList.reduce((acc, bed) => {
         acc[bed.id] = bed.wardId;
@@ -37,19 +39,25 @@ export default function AdminDashboard() {
         
         // Filter cleaning alerts for this ward
         const wardCleaning = (alerts.cleaningAlerts || [])
-          .filter(a => bedToWardMap[a.bedId] === ward.id)
-          .map(a => ({ ...a, type: 'CLEANING' }));
+          .filter(a => {
+            const mappedWardId = bedToWardMap[a.bedId];
+            return String(mappedWardId) === String(ward.id);
+          }); // Keep original type: CLEANING_DELAY
 
         // Filter capacity alerts for this ward
         const wardCapacity = (alerts.capacityAlerts || [])
-          .filter(a => a.wardId === ward.id)
-          .map(a => ({ ...a, type: 'CAPACITY' }));
+          .filter(a => String(a.wardId) === String(ward.id)); // Keep original types: CAPACITY_CRITICAL, CAPACITY_WARNING
+
+        const mappedAlertsForWard = [...wardCleaning, ...wardCapacity];
+        if (mappedAlertsForWard.length > 0) {
+          console.log(`Mapped Alerts for Ward ${ward.name}:`, mappedAlertsForWard);
+        }
 
         return {
           ...ward,
           totalBeds: wardBeds.length,
           occupiedBeds: wardBeds.filter(b => b.status === 'OCCUPIED').length,
-          alerts: [...wardCleaning, ...wardCapacity]
+          alerts: mappedAlertsForWard
         };
       });
 

@@ -31,7 +31,7 @@ public class AnalyticsService {
     public AnalyticsService(BedRepository bedRepository,
                             QueueRepository queueRepository,
                             WardRepository wardRepository,
-                            @Value("${bed.cleaning.alert.minutes:20}") long cleaningAlertMinutes,
+                            @Value("${bed.cleaning.alert.minutes:5}") long cleaningAlertMinutes,
                             @Value("${queue.discharge.alert.minutes:120}") long dischargeAlertMinutes,
                             @Value("${capacity.warning.threshold:2}") long capacityWarningThreshold) {
         this.bedRepository = bedRepository;
@@ -147,66 +147,60 @@ public class AnalyticsService {
     // -------------------------------------------------------------------------
 
     public Map<String, Object> getAlerts() {
-        List<Map<String, Object>> alerts = new ArrayList<>();
+        List<Map<String, Object>> cleaningAlerts = new ArrayList<>();
+        List<Map<String, Object>> capacityAlerts = new ArrayList<>();
 
         long nowMs = System.currentTimeMillis();
-        LocalDateTime now = LocalDateTime.now();
 
+        // 🟢 1. CLEANING ALERTS (>= 5 minutes by default if configured, or 20 min from prop)
         List<Bed> cleaningBeds = bedRepository.findByStatus("CLEANING");
-        List<Long> cleaningDelayedIds = new ArrayList<>();
         for (Bed bed : cleaningBeds) {
             Long lastUpdated = bed.getLastUpdated();
             if (lastUpdated != null) {
                 long minutes = (nowMs - lastUpdated) / (60 * 1000L);
                 if (minutes >= cleaningAlertMinutes) {
-                    cleaningDelayedIds.add(bed.getId());
+                    cleaningAlerts.add(Map.of(
+                            "bedId", bed.getId(),
+                            "type", "CLEANING_DELAY",
+                            "severity", "WARNING",
+                            "minutes", minutes
+                    ));
                 }
             }
         }
-        if (!cleaningDelayedIds.isEmpty()) {
-            alerts.add(Map.of(
-                    "type", "CLEANING_DELAY",
-                    "severity", "WARNING",
-                    "count", cleaningDelayedIds.size(),
-                    "bedIds", cleaningDelayedIds
-            ));
-        }
 
-        List<Queue> dischargePending = queueRepository.findByStatus(QueueStatus.DISCHARGE_PENDING);
-        List<Long> dischargeDelayedIds = new ArrayList<>();
-        for (Queue queue : dischargePending) {
-            LocalDateTime admittedAt = queue.getAdmittedAt();
-            if (admittedAt != null) {
-                long minutes = Duration.between(admittedAt, now).toMinutes();
-                if (minutes >= dischargeAlertMinutes) {
-                    dischargeDelayedIds.add(queue.getId());
-                }
+        // 🟢 2. CAPACITY ALERTS PER WARD (>= 85% Warning, >= 95% Critical)
+        List<Ward> wards = wardRepository.findAll();
+        for (Ward ward : wards) {
+            long total = bedRepository.countByWardId(ward.getId());
+            if (total == 0) continue;
+            
+            long occupied = bedRepository.countByStatusAndWardId("OCCUPIED", ward.getId());
+            double ratio = (double) occupied / total;
+
+            if (ratio >= 0.95) {
+                capacityAlerts.add(Map.of(
+                        "wardId", ward.getId(),
+                        "wardName", ward.getName(),
+                        "type", "CAPACITY_CRITICAL",
+                        "severity", "CRITICAL",
+                        "ratio", ratio
+                ));
+            } else if (ratio >= 0.85) {
+                capacityAlerts.add(Map.of(
+                        "wardId", ward.getId(),
+                        "wardName", ward.getName(),
+                        "type", "CAPACITY_WARNING",
+                        "severity", "WARNING",
+                        "ratio", ratio
+                ));
             }
-        }
-        if (!dischargeDelayedIds.isEmpty()) {
-            alerts.add(Map.of(
-                    "type", "DISCHARGE_DELAY",
-                    "severity", "WARNING",
-                    "count", dischargeDelayedIds.size(),
-                    "queueIds", dischargeDelayedIds
-            ));
-        }
-
-        Long futureAvailableObj = (Long) getCapacity().get("futureAvailable");
-        long futureAvailable = futureAvailableObj != null ? futureAvailableObj : 0;
-        if (futureAvailable <= capacityWarningThreshold) {
-            alerts.add(Map.of(
-                    "type", "CAPACITY_WARNING",
-                    "severity", "CRITICAL",
-                    "futureAvailable", futureAvailable,
-                    "threshold", capacityWarningThreshold
-            ));
         }
 
         return Map.of(
-                "count", alerts.size(),
-                "alerts", alerts,
-                "timestamp", System.currentTimeMillis()
+                "cleaningAlerts", cleaningAlerts,
+                "capacityAlerts", capacityAlerts,
+                "timestamp", nowMs
         );
     }
 
