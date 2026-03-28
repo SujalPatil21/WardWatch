@@ -20,7 +20,7 @@ public class BedService {
     private final WebSocketEventService webSocketEventService;
 
     public BedService(BedRepository bedRepository,
-                      @Value("${bed.cleaning.duration.minutes:7}") long cleaningDurationMinutes,
+                      @Value("${bed.cleaning.duration.minutes:5}") long cleaningDurationMinutes,
                       @Lazy WebSocketEventService webSocketEventService) {
         this.bedRepository = bedRepository;
         this.cleaningDurationMs = cleaningDurationMinutes * 60 * 1000L;
@@ -101,7 +101,7 @@ public class BedService {
                 .stream()
                 .filter(bed -> {
                     Long lastUpdated = bed.getLastUpdated();
-                    return lastUpdated != null && (now - lastUpdated >= 5 * 60 * 1000);
+                    return lastUpdated != null && (now - lastUpdated >= 3 * 60 * 1000);
                 })
                 .toList();
     }

@@ -92,12 +92,10 @@ export default function WardDetailPage() {
 
       // Filter and transform alerts for THIS ward
       const wardCleaning = (alerts.cleaningAlerts || [])
-        .filter(a => String(bedToWardMap[a.bedId]) === String(id))
-        .map(a => ({ ...a, type: 'CLEANING' }));
+        .filter(a => String(bedToWardMap[a.bedId]) === String(id)); // Keep original type: CLEANING_DELAY
 
       const wardCapacity = (alerts.capacityAlerts || [])
-        .filter(a => String(a.wardId) === String(id))
-        .map(a => ({ ...a, type: 'CAPACITY' }));
+        .filter(a => String(a.wardId) === String(id)); // Keep original types: CAPACITY_CRITICAL, CAPACITY_WARNING
 
       setWard(foundWard || null);
       setBeds(wardBeds);
@@ -359,8 +357,8 @@ export default function WardDetailPage() {
                 <div style={{ color: '#475569', fontSize: '13px', textAlign: 'center', padding: '20px' }}>No critical alerts</div>
               ) : (
                 wardAlerts.map((alert, idx) => {
-                  const isCleaning = alert.type === 'CLEANING';
-                  const msg = transformAlert(alert, occupiedCount, totalCount);
+                  const isCleaning = alert.type === 'CLEANING_DELAY';
+                  const msg = transformAlert(alert);
                   
                   return (
                     <div key={idx} style={{
@@ -373,7 +371,7 @@ export default function WardDetailPage() {
                       animation: isCleaning ? 'pulse 2s infinite ease-in-out' : 'none'
                     }}>
                       <strong style={{ display: 'block', fontSize: '10px', marginBottom: '4px', textTransform: 'uppercase' }}>
-                        {isCleaning ? '🧹 Maintenance' : '📊 Capacity'}
+                        {isCleaning ? '🧹 Maintenance' : '📈 Capacity'}
                       </strong>
                       {msg}
                     </div>
