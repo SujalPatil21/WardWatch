@@ -42,3 +42,65 @@
   box-shadow: 0 0 0 1px var(--color-teal), 0 0 15px var(--color-teal-glow);
   outline: none;
 }
+
+.ward-card {
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 10;
+  position: relative;
+}
+
+.overlay {
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #09090b 0%, #1e1b4b 100%);
+}
+
+.sidebar {
+  width: 250px;
+  height: 100vh;
+  background: rgba(20, 20, 30, 0.9);
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  padding: 20px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.sidebar-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  padding: 14px 18px;
+  text-align: left;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.sidebar-btn:hover {
+  background: rgba(61, 189, 170, 0.15);
+  border-color: rgba(61, 189, 170, 0.4);
+  color: #fff;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(61, 189, 170, 0.2);
+}
+
+.main-content {
+  flex: 1;
+  padding: 40px 50px;
+  overflow-y: auto;
+  margin-left: 250px;
+  transition: margin-left 0.3s ease;
+}

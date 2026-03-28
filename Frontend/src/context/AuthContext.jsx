@@ -22,6 +22,7 @@ export function AuthProvider({ children }) {
    * Persists credentials for Basic Auth and role for routing.
    */
   const login = useCallback((username, password, role) => {
+    console.log("[WardWatch] WRITING TO STORAGE", { username, hasPassword: !!password, role });
     localStorage.setItem('ww_username', username);
     localStorage.setItem('ww_password', password); // needed for Basic Auth header
     localStorage.setItem('ww_role', role);

@@ -24,6 +24,10 @@ const WardCard = ({ ward }) => {
   const status = getStatus(ward.occupiedBeds, ward.totalBeds);
   const statusColor = getStatusColor(status);
 
+  const handleClick = () => {
+    navigate(`/dashboard/ward/${ward.id}`);
+  };
+
   const handleMouseEnter = (e) => {
     e.currentTarget.style.transform = 'scale(1.03)';
     e.currentTarget.style.boxShadow = `0 10px 30px ${statusColor}40`;
@@ -36,7 +40,8 @@ const WardCard = ({ ward }) => {
 
   return (
     <div
-      onClick={() => navigate(`/dashboard/ward/${ward.id}`)}
+      className="ward-card"
+      onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -51,7 +56,10 @@ const WardCard = ({ ward }) => {
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px'
+        gap: '20px',
+        pointerEvents: 'auto',
+        position: 'relative',
+        zIndex: 10
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
