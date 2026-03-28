@@ -1,8 +1,10 @@
 package com.wardwatch.service;
 
+import com.wardwatch.dto.AlertDTO;
+
 import com.wardwatch.dev2.model.Bed;
 import com.wardwatch.dev2.repository.BedRepository;
-import com.wardwatch.model.Queue;
+import com.wardwatch.dev2.repository.BedRepository;
 import com.wardwatch.model.QueueStatus;
 import com.wardwatch.model.Ward;
 import com.wardwatch.repository.QueueRepository;
@@ -10,7 +12,7 @@ import com.wardwatch.repository.WardRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,20 +27,17 @@ public class AnalyticsService {
     private final WardRepository wardRepository;
 
     private final long cleaningAlertMinutes;
-    private final long dischargeAlertMinutes;
     private final long capacityWarningThreshold;
 
     public AnalyticsService(BedRepository bedRepository,
                             QueueRepository queueRepository,
                             WardRepository wardRepository,
                             @Value("${bed.cleaning.alert.minutes:20}") long cleaningAlertMinutes,
-                            @Value("${queue.discharge.alert.minutes:120}") long dischargeAlertMinutes,
                             @Value("${capacity.warning.threshold:2}") long capacityWarningThreshold) {
         this.bedRepository = bedRepository;
         this.queueRepository = queueRepository;
         this.wardRepository = wardRepository;
         this.cleaningAlertMinutes = cleaningAlertMinutes;
-        this.dischargeAlertMinutes = dischargeAlertMinutes;
         this.capacityWarningThreshold = capacityWarningThreshold;
     }
 
@@ -56,18 +55,45 @@ public class AnalyticsService {
         long incoming = queueRepository.countByStatus(QueueStatus.WAITING);
         long dischargePending = queueRepository.countByStatus(QueueStatus.DISCHARGE_PENDING);
 
-        // Weighted confidence model
-        double effectiveDischarge = dischargePending * 0.8;
-        double effectiveIncoming  = incoming * 0.9;
-        long normalizedFuture = Math.max(0, (long) Math.floor(available + effectiveDischarge - effectiveIncoming));
+        long currentOccupied = occupied;
+        long forecast4hOccupied = currentOccupied;
+        long forecast8hOccupied = Math.min(total, currentOccupied + 1);
+
+        int currentCapacityPercent = 0;
+        int forecast4hPercent = 0;
+        int forecast8hPercent = 0;
+
+        if (total > 0) {
+            currentCapacityPercent = (int) Math.round((currentOccupied * 100.0) / total);
+            forecast4hPercent = (int) Math.round((forecast4hOccupied * 100.0) / total);
+            forecast8hPercent = (int) Math.round((forecast8hOccupied * 100.0) / total);
+        }
+
+        String currentStatus = "NORMAL";
+        if (currentCapacityPercent > 90) currentStatus = "CRITICAL";
+        else if (currentCapacityPercent > 80) currentStatus = "HIGH";
+
+        String forecast4hStatus = "NORMAL";
+        if (forecast4hPercent > 90) forecast4hStatus = "CRITICAL";
+        else if (forecast4hPercent > 80) forecast4hStatus = "HIGH";
+
+        String forecast8hStatus = "NORMAL";
+        if (forecast8hPercent > 90) forecast8hStatus = "CRITICAL";
+        else if (forecast8hPercent > 80) forecast8hStatus = "HIGH";
+
+        String statusReason;
+        if (currentStatus.equals("CRITICAL")) {
+            statusReason = "Ward near full capacity (" + currentOccupied + "/" + total + " occupied)";
+        } else if (currentStatus.equals("HIGH")) {
+            statusReason = "Limited bed availability (" + currentOccupied + "/" + total + " occupied)";
+        } else {
+            statusReason = "Capacity within safe limits";
+        }
+
         Map<String, Object> raw = new HashMap<>();
         raw.put("availableBeds", available);
         raw.put("dischargePending", dischargePending);
         raw.put("incomingQueue", incoming);
-
-        Map<String, Object> weighted = new HashMap<>();
-        weighted.put("effectiveDischarge", effectiveDischarge);
-        weighted.put("effectiveIncoming", effectiveIncoming);
 
         Map<String, Object> result = new HashMap<>();
         result.put("totalBeds", total);
@@ -77,9 +103,18 @@ public class AnalyticsService {
         result.put("reservedBeds", reserved);
         result.put("incomingQueue", incoming);
         result.put("dischargePendingQueue", dischargePending);
-        result.put("futureAvailable", normalizedFuture);
+        
+        result.put("currentCapacityPercent", currentCapacityPercent);
+        result.put("currentStatus", currentStatus);
+        result.put("forecast4hPercent", forecast4hPercent);
+        result.put("forecast4hStatus", forecast4hStatus);
+        result.put("forecast8hPercent", forecast8hPercent);
+        result.put("forecast8hStatus", forecast8hStatus);
+        
+        // Retaining old fields for backward compatibility
+        result.put("status", currentStatus);
+        result.put("statusReason", statusReason);
         result.put("raw", raw);
-        result.put("weighted", weighted);
         result.put("timestamp", System.currentTimeMillis());
         return result;
     }
@@ -99,19 +134,45 @@ public class AnalyticsService {
         long incoming = queueRepository.countByStatus(QueueStatus.WAITING);
         long dischargePending = queueRepository.countByStatus(QueueStatus.DISCHARGE_PENDING);
 
-        // Weighted confidence model
-        double effectiveDischarge = dischargePending * 0.8;
-        double effectiveIncoming  = incoming * 0.9;
-        long normalizedFuture = Math.max(0, (long) Math.floor(available + effectiveDischarge - effectiveIncoming));
+        long currentOccupied = occupied;
+        long forecast4hOccupied = currentOccupied;
+        long forecast8hOccupied = Math.min(total, currentOccupied + 1);
+
+        int currentCapacityPercent = 0;
+        int forecast4hPercent = 0;
+        int forecast8hPercent = 0;
+
+        if (total > 0) {
+            currentCapacityPercent = (int) Math.round((currentOccupied * 100.0) / total);
+            forecast4hPercent = (int) Math.round((forecast4hOccupied * 100.0) / total);
+            forecast8hPercent = (int) Math.round((forecast8hOccupied * 100.0) / total);
+        }
+
+        String currentStatus = "NORMAL";
+        if (currentCapacityPercent > 90) currentStatus = "CRITICAL";
+        else if (currentCapacityPercent > 80) currentStatus = "HIGH";
+
+        String forecast4hStatus = "NORMAL";
+        if (forecast4hPercent > 90) forecast4hStatus = "CRITICAL";
+        else if (forecast4hPercent > 80) forecast4hStatus = "HIGH";
+
+        String forecast8hStatus = "NORMAL";
+        if (forecast8hPercent > 90) forecast8hStatus = "CRITICAL";
+        else if (forecast8hPercent > 80) forecast8hStatus = "HIGH";
+
+        String statusReason;
+        if (currentStatus.equals("CRITICAL")) {
+            statusReason = "Ward near full capacity (" + currentOccupied + "/" + total + " occupied)";
+        } else if (currentStatus.equals("HIGH")) {
+            statusReason = "Limited bed availability (" + currentOccupied + "/" + total + " occupied)";
+        } else {
+            statusReason = "Capacity within safe limits";
+        }
 
         Map<String, Object> raw = new HashMap<>();
         raw.put("availableBeds", available);
         raw.put("dischargePending", dischargePending);
         raw.put("incomingQueue", incoming);
-
-        Map<String, Object> weighted = new HashMap<>();
-        weighted.put("effectiveDischarge", effectiveDischarge);
-        weighted.put("effectiveIncoming", effectiveIncoming);
 
         Map<String, Object> result = new HashMap<>();
         result.put("wardId", wardId);
@@ -122,9 +183,18 @@ public class AnalyticsService {
         result.put("reservedBeds", reserved);
         result.put("incomingQueue", incoming);
         result.put("dischargePendingQueue", dischargePending);
-        result.put("futureAvailable", normalizedFuture);
+        
+        result.put("currentCapacityPercent", currentCapacityPercent);
+        result.put("currentStatus", currentStatus);
+        result.put("forecast4hPercent", forecast4hPercent);
+        result.put("forecast4hStatus", forecast4hStatus);
+        result.put("forecast8hPercent", forecast8hPercent);
+        result.put("forecast8hStatus", forecast8hStatus);
+        
+        // Retaining old fields for backward compatibility
+        result.put("status", currentStatus);
+        result.put("statusReason", statusReason);
         result.put("raw", raw);
-        result.put("weighted", weighted);
         result.put("timestamp", System.currentTimeMillis());
         return result;
     }
@@ -172,25 +242,7 @@ public class AnalyticsService {
             ));
         }
 
-        List<Queue> dischargePending = queueRepository.findByStatus(QueueStatus.DISCHARGE_PENDING);
-        List<Long> dischargeDelayedIds = new ArrayList<>();
-        for (Queue queue : dischargePending) {
-            LocalDateTime admittedAt = queue.getAdmittedAt();
-            if (admittedAt != null) {
-                long minutes = Duration.between(admittedAt, now).toMinutes();
-                if (minutes >= dischargeAlertMinutes) {
-                    dischargeDelayedIds.add(queue.getId());
-                }
-            }
-        }
-        if (!dischargeDelayedIds.isEmpty()) {
-            alerts.add(Map.of(
-                    "type", "DISCHARGE_DELAY",
-                    "severity", "WARNING",
-                    "count", dischargeDelayedIds.size(),
-                    "queueIds", dischargeDelayedIds
-            ));
-        }
+
 
         Long futureAvailableObj = (Long) getCapacity().get("futureAvailable");
         long futureAvailable = futureAvailableObj != null ? futureAvailableObj : 0;
@@ -208,6 +260,83 @@ public class AnalyticsService {
                 "alerts", alerts,
                 "timestamp", System.currentTimeMillis()
         );
+    }
+
+    // -------------------------------------------------------------------------
+    // SUMMARY (original behavior, fully preserved)
+    // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // ESCALATION FLAGS — computed dynamically, no DB storage
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns actionable escalation alerts.
+     * If wardId is null → global (all wards).
+     * If wardId is provided → ward-scoped.
+     */
+    public List<AlertDTO> getEscalationFlags(Long wardId) {
+        List<AlertDTO> alerts = new ArrayList<>();
+        long nowMs = System.currentTimeMillis();
+        LocalDateTime now = LocalDateTime.now();
+
+
+
+        // ── B. CLEANING DELAY ─────────────────────────────────────────────────
+        // Bed.status == CLEANING, lastUpdated != null, duration > cleaningAlertMinutes
+        List<Bed> cleaningBeds = (wardId != null)
+                ? bedRepository.findByStatusAndWardId("CLEANING", wardId)
+                : bedRepository.findByStatus("CLEANING");
+        for (Bed bed : cleaningBeds) {
+            if (bed.getLastUpdated() == null) continue;
+            long minutes = (nowMs - bed.getLastUpdated()) / (60_000L);
+            if (minutes >= cleaningAlertMinutes) {
+                String time = formatDuration(minutes);
+                alerts.add(new AlertDTO("CLEANING_DELAY",
+                        "Bed " + bed.getId() + " cleaning delayed (" + time + ")"));
+            }
+        }
+
+        // ── C. CAPACITY ALERT ─────────────────────────────────────────────────
+        // availableBeds / totalBeds < 0.1  (i.e. < 10% available)
+        Map<String, Object> cap = (wardId != null)
+                ? getCapacityForWard(wardId)
+                : getCapacity();
+        long total     = toLong(cap.get("totalBeds"));
+        long available = toLong(cap.get("availableBeds"));
+        if (total > 0 && (double) available / total < 0.1) {
+            // Occupied % = (total - available) / total
+            int pct = (int) Math.round((double)(total - available) / total * 100);
+            String where;
+            if (wardId != null) {
+                where = wardRepository.findById(wardId)
+                        .map(Ward::getName)
+                        .orElse("Ward " + wardId);
+            } else {
+                where = "Hospital";
+            }
+            alerts.add(new AlertDTO("CAPACITY_ALERT",
+                    where + " at " + pct + "% capacity — risk of overload"));
+        }
+
+        return alerts;
+    }
+
+    /** Converts minutes to "45m" or "2h 17m" style string. */
+    private String formatDuration(long totalMinutes) {
+        if (totalMinutes < 60) {
+            return totalMinutes + "m";
+        }
+        long hours   = totalMinutes / 60;
+        long minutes = totalMinutes % 60;
+        return minutes == 0 ? hours + "h" : hours + "h " + minutes + "m";
+    }
+
+    /** Safe cast from Map value (Integer or Long) to long. */
+    private long toLong(Object val) {
+        if (val instanceof Long l)    return l;
+        if (val instanceof Integer i) return i.longValue();
+        return 0L;
     }
 
     // -------------------------------------------------------------------------

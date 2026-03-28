@@ -25,4 +25,8 @@ public class Bed {
     private String doctor;
     private Long lastUpdated;
     private Long wardId;
+    
+    // New fields for Live Bed Status Board
+    private String conditionCategory;
+    private Long admittedAt;
 }

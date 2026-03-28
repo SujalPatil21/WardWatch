@@ -58,28 +58,44 @@ public class BedService {
         return saved;
     }
 
-    public Bed assignBed(Long id, String patientName, String doctor) {
+    public Bed assignBed(Long id, String patientName, String doctor, String conditionCategory) {
         Bed bed = bedRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bed not found"));
+
+        if (!"AVAILABLE".equalsIgnoreCase(bed.getStatus()) && !"RESERVED".equalsIgnoreCase(bed.getStatus())) {
+            throw new RuntimeException("Bed is not available for assignment. Current status: " + bed.getStatus());
+        }
 
         bed.setStatus("OCCUPIED");
         bed.setPatientName(patientName);
         bed.setDoctor(doctor);
+        bed.setConditionCategory(conditionCategory);
+        bed.setAdmittedAt(System.currentTimeMillis());
         bed.setLastUpdated(System.currentTimeMillis());
 
-        return bedRepository.save(bed);
+        Bed saved = bedRepository.save(bed);
+        webSocketEventService.sendSystemUpdate();
+        return saved;
     }
 
     public Bed freeBed(Long id) {
         Bed bed = bedRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bed not found"));
 
+        if (!"OCCUPIED".equalsIgnoreCase(bed.getStatus())) {
+            throw new RuntimeException("Bed must be OCCUPIED to be freed/discharged. Current status: " + bed.getStatus());
+        }
+
         bed.setStatus("CLEANING");
         bed.setPatientName(null);
         bed.setDoctor(null);
+        bed.setConditionCategory(null);
+        bed.setAdmittedAt(null);
         bed.setLastUpdated(System.currentTimeMillis());
 
-        return bedRepository.save(bed);
+        Bed saved = bedRepository.save(bed);
+        webSocketEventService.sendSystemUpdate();
+        return saved;
     }
 
     /**

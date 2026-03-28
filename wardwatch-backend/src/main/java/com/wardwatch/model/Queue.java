@@ -38,6 +38,9 @@ public class Queue {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+    
+    @Column
+    private Long estimatedDischargeTime;
 
     @PrePersist
     protected void onCreate() {
