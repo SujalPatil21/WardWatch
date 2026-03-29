@@ -1,5 +1,10 @@
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
+import { BASE_URL } from '../api/client';
+
+if (!BASE_URL) {
+  throw new Error("[WardWatch] CRITICAL: VITE_API_BASE_URL is missing for WebSocket initialization.");
+}
 
 class WebSocketService {
   constructor() {
@@ -14,7 +19,7 @@ class WebSocketService {
     }
 
     // Connect to the Spring Boot endpoint
-    const socket = new SockJS('http://localhost:8080/ws');
+    const socket = new SockJS(`${BASE_URL.replace(/\/$/, '')}/ws`);
     
     this.stompClient = new Client({
       webSocketFactory: () => socket,

@@ -1,7 +1,11 @@
 // ─── WardWatch API Client ─────────────────────────────────────────────────────
-// ALL requests go directly to http://localhost:8080
+// ALL requests use the environment-provided VITE_API_BASE_URL
 
-const BASE_URL = 'http://localhost:8080';
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+if (!BASE_URL) {
+  throw new Error("[WardWatch] CRITICAL: VITE_API_BASE_URL is not defined in the environment.");
+}
 
 // ─── Basic Auth helper ────────────────────────────────────────────────────────
 export function getAuthHeader() {
