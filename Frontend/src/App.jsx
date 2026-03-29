@@ -8,6 +8,8 @@ import AdminOverview from './pages/AdminOverview';
 import WardDetailPage from './pages/WardDetailPage';
 import QueueDashboard from './pages/QueueDashboard';
 import ProtectedRoute from './routes/ProtectedRoute';
+import FloatingHandoverButton from './components/FloatingHandoverButton';
+import ShiftHandover from './pages/ShiftHandover';
 
 // ─── Main Routing Logic ──────────────────────────────────────────────────────
 function MainRouter() {
@@ -35,7 +37,18 @@ function MainRouter() {
       <Route element={<ProtectedRoute allowedRoles={['STAFF']} />}>
         <Route path="/dashboard" element={<AdminDashboard />} />
         <Route path="/queue" element={<QueueDashboard />} />
-        <Route path="/ward/:id" element={<WardDetailPage />} />
+
+        <Route
+          path="/ward/:id"
+          element={
+            <>
+              <WardDetailPage />
+              <FloatingHandoverButton />
+            </>
+          }
+        />
+
+        <Route path="/handover/:wardId" element={<ShiftHandover />} />
       </Route>
 
       {/* Fallback for undefined paths */}
@@ -203,14 +216,14 @@ function LoginPanel() {
         // Call backend to verify credentials
         const data = await apiLogin({ username, password });
         const resolvedRole = data?.role || 'STAFF';
-        
+
         // Direct redirect based on role
         if (resolvedRole === 'ADMIN') {
           navigate('/admin');
         } else {
           navigate('/dashboard');
         }
-        
+
         login(username, password, resolvedRole);
       }
     } catch (err) {
@@ -221,13 +234,13 @@ function LoginPanel() {
       ) {
         if (!isRegistering) {
           const resolvedRole = role.toUpperCase();
-          
+
           if (resolvedRole === 'ADMIN') {
             navigate('/admin');
           } else {
             navigate('/dashboard');
           }
-          
+
           login(username, password, resolvedRole);
           alert(`Demo mode: simulated login as ${resolvedRole}`);
         }
