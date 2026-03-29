@@ -7,6 +7,7 @@ import {
   completeCleaning 
 } from '../services/wardService';
 import { transformAlert, sortAlerts } from '../utils/alertUtils';
+import BedCard from '../components/Ward/BedCard';
 
 const STATUS_CONFIG = {
   AVAILABLE: {
@@ -158,38 +159,6 @@ export default function WardDetailPage() {
           50% { opacity: 0.7; transform: scale(0.99); }
           100% { opacity: 1; transform: scale(1); }
         }
-        .bed-card-container {
-          perspective: 1000px;
-          height: 200px;
-          cursor: pointer;
-        }
-        .bed-card-inner {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          text-align: left;
-          transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-          transform-style: preserve-3d;
-        }
-        .bed-card-container.flipped .bed-card-inner {
-          transform: rotateY(180deg);
-        }
-        .bed-card-front, .bed-card-back {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          -webkit-backface-visibility: hidden;
-          backface-visibility: hidden;
-          border-radius: 20px;
-          padding: 24px 20px;
-          display: flex;
-          flex-direction: column;
-          box-sizing: border-box;
-        }
-        .bed-card-back {
-          transform: rotateY(180deg);
-          justify-content: space-between;
-        }
       `}</style>
 
       <nav style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -244,76 +213,27 @@ export default function WardDetailPage() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '24px' }}>
             {beds.map(bed => {
               const cfg = STATUS_CONFIG[bed.status] || FALLBACK_STATUS;
-              const isCleaning = bed.status === 'CLEANING';
               const isFlipped = flippedBeds.has(bed.id);
+              
+              // CRITICAL logic: CLEANING_DELAY alert for this specific bed OR ward capacity >= 95%
+              const hasCleaningAlert = wardAlerts.some(a => a.type === 'CLEANING_DELAY' && String(a.bedId) === String(bed.id));
+              const isWardCritical = ratio >= 0.95;
+              const isCritical = hasCleaningAlert || (isWardCritical && bed.status === 'OCCUPIED');
 
               return (
-                <div 
-                  key={bed.id} 
-                  className={`bed-card-container ${isFlipped ? 'flipped' : ''}`}
-                  onClick={() => toggleFlip(bed.id)}
-                >
-                  <div className="bed-card-inner">
-                    <div className="bed-card-front" style={{
-                      background: cfg.bg,
-                      border: `1px solid ${cfg.border}`,
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: '800', color: '#fff' }}>Bed #{bed.id}</span>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: cfg.color, boxShadow: cfg.glow }} />
-                      </div>
-                      <div style={{ fontSize: '11px', fontWeight: '700', color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px' }}>
-                        {cfg.label}
-                      </div>
-                      <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'center', opacity: 0.4 }}>
-                        <span style={{ fontSize: '24px' }}>🖱️</span>
-                      </div>
-                    </div>
-
-                    <div className="bed-card-back" style={{
-                      background: 'rgba(30, 41, 59, 0.95)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600', marginBottom: '8px' }}>DETAILED INFO</div>
-                        <div style={{ fontSize: '15px', fontWeight: '700', color: '#fff', marginBottom: '4px' }}>
-                          {bed.patientName || 'Vacant'}
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#3dbdaa', fontWeight: '600' }}>
-                          {currentDoctor}
-                        </div>
-                      </div>
-                      <div>
-                        {isCleaning && (
-                          <button 
-                            onClick={(e) => handleCompleteCleaning(e, bed.id)}
-                            style={{
-                              width: '100%',
-                              background: '#3dbdaa',
-                              color: '#fff',
-                              border: 'none',
-                              padding: '8px',
-                              borderRadius: '8px',
-                              fontSize: '11px',
-                              fontWeight: '700',
-                              cursor: 'pointer',
-                              marginBottom: '10px'
-                            }}
-                          >
-                            Mark Available
-                          </button>
-                        )}
-                        <div style={{ fontSize: '10px', color: '#475569' }}>
-                          Last Update: {bed.lastUpdated ? new Date(bed.lastUpdated).toLocaleTimeString() : 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <BedCard 
+                  key={bed.id}
+                  bed={bed}
+                  statusConfig={cfg}
+                  isFlipped={isFlipped}
+                  onFlip={toggleFlip}
+                  onCompleteCleaning={handleCompleteCleaning}
+                  doctorName={currentDoctor}
+                  isCritical={isCritical}
+                />
               );
             })}
           </div>
