@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useParams } from "react-router-dom";
 import { useLiveData } from "../context/LiveDataContext";
 
 // ─── Status config (matches WardDetailPage) ────────────────────────────────────
@@ -28,39 +29,62 @@ function EmptyState({ msg }) {
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function ShiftHandover() {
-  const params = new URLSearchParams(window.location.search);
-  const wardId = params.get("wardId");
-
+  const { wardId } = useParams();
   const [printHover, setPrintHover] = useState(false);
 
   const { beds = [], wards = [], queue = [], alerts = {} } = useLiveData() || {};
 
-  // Ward-scoped data
-  const ward     = wards.find(w => String(w.id) === wardId);
-  const wardBeds = beds.filter(b => String(b.wardId) === wardId);
+  // Find current ward
+  const currentWard = wards.find(w => String(w.id) === String(wardId));
 
-  const wardAlerts = (() => {
-    if (Array.isArray(alerts[wardId])) return alerts[wardId];
-    const cap = (alerts.capacityAlerts || []).filter(a => String(a.wardId) === wardId);
-    const cln = (alerts.cleaningAlerts || []).filter(a => {
-      const bed = beds.find(b => String(b.id) === String(a.bedId));
-      return bed && String(bed.wardId) === wardId;
-    });
-    return [...cap, ...cln];
-  })();
+  // Filter beds for this ward
+  const wardBeds = beds.filter(
+    b => String(b.wardId) === String(wardId)
+  );
 
-  const occupiedBeds      = wardBeds.filter(b => b.status?.toUpperCase() === "OCCUPIED");
-  const availableBeds     = wardBeds.filter(b => b.status?.toUpperCase() === "AVAILABLE");
-  const cleaningBeds      = wardBeds.filter(b => b.status?.toUpperCase() === "CLEANING");
+  // Calculate stats
+  const totalBeds = wardBeds.length;
+
+  const occupiedBeds = wardBeds.filter(
+    b => b.status?.trim().toUpperCase() === "OCCUPIED"
+  ).length;
+
+  const availableBeds = wardBeds.filter(
+    b => b.status?.trim().toUpperCase() === "AVAILABLE"
+  ).length;
+
+  const cleaningBeds = wardBeds.filter(
+    b => b.status?.trim().toUpperCase() === "CLEANING"
+  ).length;
+
+  // Alert mapping
+  const wardAlertsData = alerts[wardId] || [];
+  
+  // Also include general alerts that might apply to this ward
+  const capAlerts = (alerts.capacityAlerts || []).filter(a => String(a.wardId) === String(wardId));
+  const clnAlerts = (alerts.cleaningAlerts || []).filter(a => {
+    const bed = beds.find(b => String(b.id) === String(a.bedId));
+    return bed && String(bed.wardId) === String(wardId);
+  });
+
+  const wardAlerts = [...wardAlertsData, ...capAlerts, ...clnAlerts];
+
+  const criticalAlerts = wardAlerts.filter(a =>
+    String(a.level || a.type || "").toUpperCase().includes("CRITICAL")
+  );
+
   const pendingAdmissions = queue.filter(q =>
-    String(q.wardId) === wardId && q.status?.toUpperCase() === "WAITING"
+    String(q.wardId) === String(wardId) && q.status?.toUpperCase() === "WAITING"
   );
   const pendingDischarges = queue.filter(q =>
-    String(q.wardId) === wardId && q.status?.toUpperCase() === "DISCHARGE_PENDING"
+    String(q.wardId) === String(wardId) && q.status?.toUpperCase() === "DISCHARGE_PENDING"
   );
-  const criticalAlerts = wardAlerts.filter(a =>
-    (a.level || a.type || "").toUpperCase().includes("CRITICAL")
-  );
+
+  // Debug (Mandatory)
+  console.log("WARD ID:", wardId);
+  console.log("ALL BEDS:", beds.length);
+  console.log("WARD BEDS:", wardBeds.length);
+  console.log("WARD DATA:", currentWard);
 
   const occupancyPct   = wardBeds.length > 0
     ? Math.round((occupiedBeds.length / wardBeds.length) * 100) : 0;
@@ -431,7 +455,7 @@ export default function ShiftHandover() {
                   Shift Handover Summary
                 </h1>
                 <p style={{ margin: "6px 0 0", fontSize: "14px", color: "#94a3b8" }}>
-                  <strong style={{ color: "#e2e8f0" }}>{ward?.name || `Ward ${wardId}`}</strong>
+                  <strong style={{ color: "#e2e8f0" }}>{currentWard?.name || `Ward ${wardId}`}</strong>
                   <span style={{ margin: "0 8px", opacity: 0.4 }}>•</span>
                   {generatedAt}
                 </p>
@@ -450,7 +474,7 @@ export default function ShiftHandover() {
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "rgba(255,255,255,0.4)", marginBottom: "6px" }}>
                 <span>Bed Occupancy</span>
                 <strong style={{ color: occupancyColor }}>
-                  {occupiedBeds.length} / {wardBeds.length} beds · {occupancyPct}%
+                  {occupiedBeds} / {wardBeds.length} beds · {occupancyPct}%
                 </strong>
               </div>
               <div className="occ-track">
@@ -463,9 +487,9 @@ export default function ShiftHandover() {
           <div className="stats-grid">
             {[
               { value: wardBeds.length,      label: "Total Beds",  color: "#f1f5f9" },
-              { value: occupiedBeds.length,  label: "Occupied",    color: "#ef4444"  },
-              { value: availableBeds.length, label: "Available",   color: "#22c55e"  },
-              { value: cleaningBeds.length,  label: "In Cleaning", color: "#eab308"  },
+              { value: occupiedBeds,  label: "Occupied",    color: "#ef4444"  },
+              { value: availableBeds, label: "Available",   color: "#22c55e"  },
+              { value: cleaningBeds,  label: "In Cleaning", color: "#eab308"  },
             ].map(({ value, label, color }) => (
               <div key={label} className="stat-box">
                 <div className="stat-value" style={{ color }}>{value}</div>
