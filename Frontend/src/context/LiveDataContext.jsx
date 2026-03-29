@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import webSocketService from '../websocket/WebSocketService';
+import { connectWebSocket, subscribeToData } from '../websocket/WebSocketService';
 
 const LiveDataContext = createContext();
 
@@ -21,22 +21,30 @@ export const LiveDataProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    console.log("[LiveDataContext] Connecting to WebSocket...");
+    console.log("[LiveDataContext] Initializing WebSocket connection...");
     
-    /*
-    webSocketService.connect((payload) => {
+    // Connect WebSocket
+    connectWebSocket();
+
+    // Subscribe to data flow
+    const unsubscribe = subscribeToData((payload) => {
+      console.log("🔥 Updating UI with data:", payload);
+      
       const actualData = payload.data || payload;
+      
       setData((prevData) => {
+        // Merge over previous data to ensure all keys persist,
+        // but fully replace fields that were sent in the payload.
         return {
           ...prevData,
           ...actualData
         };
       });
     });
-    */
 
     return () => {
-      // webSocketService.disconnect();
+      // Unsubscribe from our listener to prevent memory leaks or duplicate updates
+      if (unsubscribe) unsubscribe();
     };
   }, []);
 
