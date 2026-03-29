@@ -76,7 +76,10 @@ export default function QueueDashboard() {
 
     try {
       setIsSubmitting(true);
+      const start = performance.now();
       await addPatientToQueue(name, selectedWardName);
+      const end = performance.now();
+      console.log("ADD PATIENT API TIME:", (end - start).toFixed(2), "ms");
       setName('');
       setSelectedWardName(''); // Reset
       await loadData();
