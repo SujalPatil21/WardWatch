@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
+import LogoutButton from '../components/common/LogoutButton';
+import { useAuth } from '../context/AuthContext';
 import { fetchQueue, fetchWards, addPatientToQueue, completeQueueAction } from '../services/wardService';
 
 const STATUS_CONFIG = {
@@ -18,6 +20,9 @@ const STATUS_CONFIG = {
 };
 
 export default function QueueDashboard() {
+  const { role } = useAuth();
+  const isAdmin = role === 'ADMIN';
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [queue, setQueue] = useState([]);
   const [wards, setWards] = useState([]);
@@ -128,21 +133,24 @@ export default function QueueDashboard() {
               Centralized control for admissions and discharges.
             </p>
           </div>
-          <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: '#fff',
-              padding: '10px 18px',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              fontSize: '18px',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {sidebarOpen ? '⇠' : '⇢'}
-          </button>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: '#fff',
+                padding: '10px 18px',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                fontSize: '18px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {sidebarOpen ? '⇠' : '⇢'}
+            </button>
+            <LogoutButton />
+          </div>
         </header>
 
         {error && (
@@ -158,94 +166,101 @@ export default function QueueDashboard() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '30px', alignItems: 'start' }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: isAdmin ? '1fr' : '1fr 2fr', 
+          gap: '30px', 
+          alignItems: 'start' 
+        }}>
           
-          {/* Add Patient Card */}
-          <section className="card-glass" style={{
-            background: 'rgba(30, 41, 59, 0.5)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            padding: '30px',
-            borderRadius: '24px',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '24px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <span style={{ fontSize: '24px' }}>➕</span> Add New Patient
-            </h2>
-            <form onSubmit={handleAddPatient} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Patient Name
-                </label>
-                <input 
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. John Doe"
-                  required
-                  style={{
-                    width: '100%',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '12px',
-                    padding: '14px 18px',
-                    color: '#fff',
-                    outline: 'none',
-                    fontSize: '15px'
-                  }}
-                />
-              </div>
+          {/* Add Patient Card - Hide for ADMIN */}
+          {!isAdmin && (
+            <section className="card-glass" style={{
+              background: 'rgba(30, 41, 59, 0.5)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              padding: '30px',
+              borderRadius: '24px',
+              backdropFilter: 'blur(10px)'
+            }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '24px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <span style={{ fontSize: '24px' }}>➕</span> Add New Patient
+              </h2>
+              <form onSubmit={handleAddPatient} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Patient Name
+                  </label>
+                  <input 
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    required
+                    style={{
+                      width: '100%',
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      padding: '14px 18px',
+                      color: '#fff',
+                      outline: 'none',
+                      fontSize: '15px'
+                    }}
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Ward Type Request
-                </label>
-                <select 
-                  value={selectedWardName}
-                  onChange={(e) => setSelectedWardName(e.target.value)}
-                  required
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Ward Type Request
+                  </label>
+                  <select 
+                    value={selectedWardName}
+                    onChange={(e) => setSelectedWardName(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      padding: '14px 18px',
+                      color: '#fff',
+                      outline: 'none',
+                      fontSize: '15px',
+                      appearance: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="" disabled>Select Ward Type...</option>
+                    {/* Dynamic ward options */}
+                    {Array.from(new Set(wards.map(w => w.name))).map(name => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={isSubmitting || loading || !name || !selectedWardName}
                   style={{
-                    width: '100%',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '12px',
-                    padding: '14px 18px',
+                    background: 'linear-gradient(135deg, #3dbdaa 0%, #2563eb 100%)',
+                    border: 'none',
                     color: '#fff',
-                    outline: 'none',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    fontWeight: '700',
                     fontSize: '15px',
-                    appearance: 'none',
-                    cursor: 'pointer'
+                    cursor: (isSubmitting || loading || !name || !selectedWardName) ? 'not-allowed' : 'pointer',
+                    opacity: (isSubmitting || loading || !name || !selectedWardName) ? 0.6 : 1,
+                    boxShadow: '0 4px 20px rgba(61, 189, 170, 0.25)',
+                    transition: 'all 0.2s ease',
+                    marginTop: '10px'
                   }}
                 >
-                  <option value="" disabled>Select Ward Type...</option>
-                  {/* Dynamic ward options */}
-                  {Array.from(new Set(wards.map(w => w.name))).map(name => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <button 
-                type="submit"
-                disabled={isSubmitting || loading || !name || !selectedWardName}
-                style={{
-                  background: 'linear-gradient(135deg, #3dbdaa 0%, #2563eb 100%)',
-                  border: 'none',
-                  color: '#fff',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  fontWeight: '700',
-                  fontSize: '15px',
-                  cursor: (isSubmitting || loading || !name || !selectedWardName) ? 'not-allowed' : 'pointer',
-                  opacity: (isSubmitting || loading || !name || !selectedWardName) ? 0.6 : 1,
-                  boxShadow: '0 4px 20px rgba(61, 189, 170, 0.25)',
-                  transition: 'all 0.2s ease',
-                  marginTop: '10px'
-                }}
-              >
-                {isSubmitting ? 'Adding...' : 'Add to Queue'}
-              </button>
-            </form>
-          </section>
+                  {isSubmitting ? 'Adding...' : 'Add to Queue'}
+                </button>
+              </form>
+            </section>
+          )}
 
           {/* Queue Lists Container */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
@@ -260,6 +275,7 @@ export default function QueueDashboard() {
               onWardSelect={handleWardSelectChange}
               onAction={handleAction}
               type="WAITING"
+              isAdmin={isAdmin}
             />
 
             {/* Discharge List */}
@@ -269,6 +285,7 @@ export default function QueueDashboard() {
               items={dischargePatients} 
               onAction={handleAction}
               type="DISCHARGE_PENDING"
+              isAdmin={isAdmin}
             />
 
           </div>
@@ -283,7 +300,7 @@ export default function QueueDashboard() {
   );
 }
 
-const QueueSection = ({ title, icon, items, wards, selectedAdmitWards, onWardSelect, onAction, type }) => (
+const QueueSection = ({ title, icon, items, wards, selectedAdmitWards, onWardSelect, onAction, type, isAdmin }) => (
   <section style={{
     background: 'rgba(30, 41, 59, 0.5)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -348,70 +365,72 @@ const QueueSection = ({ title, icon, items, wards, selectedAdmitWards, onWardSel
             </div>
 
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', zIndex: 100 }}>
-              {type === 'WAITING' ? (
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <select 
-                    value={selectedAdmitWards ? selectedAdmitWards[item.id] || '' : ''}
-                    onChange={(e) => onWardSelect(item.id, e.target.value)}
-                    style={{
-                      background: '#0f172a', // Dark background
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      color: '#fff', // White text
-                      borderRadius: '8px',
-                      padding: '8px 30px 8px 12px',
-                      fontSize: '13px',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      appearance: 'none',
-                      zIndex: 1000, // High z-index
-                      position: 'relative'
-                    }}
-                  >
-                    <option value="" disabled>Select Ward...</option>
-                    {wards.map(ward => (
-                      <option key={ward.id} value={ward.id}>{ward.name}</option>
-                    ))}
-                  </select>
+              {!isAdmin && (
+                type === 'WAITING' ? (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <select 
+                      value={selectedAdmitWards ? selectedAdmitWards[item.id] || '' : ''}
+                      onChange={(e) => onWardSelect(item.id, e.target.value)}
+                      style={{
+                        background: '#0f172a', // Dark background
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#fff', // White text
+                        borderRadius: '8px',
+                        padding: '8px 30px 8px 12px',
+                        fontSize: '13px',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        appearance: 'none',
+                        zIndex: 1000, // High z-index
+                        position: 'relative'
+                      }}
+                    >
+                      <option value="" disabled>Select Ward...</option>
+                      {wards.map(ward => (
+                        <option key={ward.id} value={ward.id}>{ward.name}</option>
+                      ))}
+                    </select>
+                    <button 
+                      onClick={() => {
+                        const wardId = selectedAdmitWards[item.id];
+                        if (wardId) onAction(item.id, 'admit', wardId);
+                      }}
+                      disabled={!selectedAdmitWards[item.id]}
+                      style={{
+                        background: '#10b981',
+                        border: 'none',
+                        color: '#fff',
+                        padding: '8px 20px',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        cursor: !selectedAdmitWards[item.id] ? 'not-allowed' : 'pointer',
+                        opacity: !selectedAdmitWards[item.id] ? 0.5 : 1,
+                        transition: 'all 0.2s ease',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      Admit
+                    </button>
+                  </div>
+                ) : (
                   <button 
-                    onClick={() => {
-                      const wardId = selectedAdmitWards[item.id];
-                      if (wardId) onAction(item.id, 'admit', wardId);
-                    }}
-                    disabled={!selectedAdmitWards[item.id]}
+                    onClick={() => onAction(item.id, 'discharge')}
                     style={{
-                      background: '#10b981',
-                      border: 'none',
-                      color: '#fff',
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      color: '#fca5a5',
                       padding: '8px 20px',
                       borderRadius: '8px',
                       fontSize: '13px',
                       fontWeight: '700',
-                      cursor: !selectedAdmitWards[item.id] ? 'not-allowed' : 'pointer',
-                      opacity: !selectedAdmitWards[item.id] ? 0.5 : 1,
-                      transition: 'all 0.2s ease',
-                      whiteSpace: 'nowrap'
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    Admit
+                    Discharge
                   </button>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => onAction(item.id, 'discharge')}
-                  style={{
-                    background: 'rgba(239, 68, 68, 0.15)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    color: '#fca5a5',
-                    padding: '8px 20px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  Discharge
-                </button>
+                )
               )}
             </div>
           </div>

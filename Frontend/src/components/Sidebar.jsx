@@ -1,7 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ isOpen }) => {
+  const { role } = useAuth();
+  const isAdmin = role === 'ADMIN';
+
   return (
     <div className={`sidebar ${isOpen ? 'open' : 'collapsed'}`} style={{
       width: isOpen ? '260px' : '80px',
@@ -35,8 +39,17 @@ const Sidebar = ({ isOpen }) => {
       </div>
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <NavItem to="/dashboard" icon="📊" label="Dashboard" isOpen={isOpen} />
-        <NavItem to="/queue" icon="📋" label="Queue" isOpen={isOpen} />
+        {isAdmin ? (
+          <>
+            <NavItem to="/admin" icon="📊" label="Dashboard" isOpen={isOpen} />
+            <NavItem to="/admin/queue" icon="📋" label="Queue" isOpen={isOpen} />
+          </>
+        ) : (
+          <>
+            <NavItem to="/dashboard" icon="📊" label="Dashboard" isOpen={isOpen} />
+            <NavItem to="/queue" icon="📋" label="Queue" isOpen={isOpen} />
+          </>
+        )}
       </nav>
 
       <div style={{ marginTop: 'auto', textAlign: 'center' }}>

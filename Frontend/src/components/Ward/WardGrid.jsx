@@ -1,7 +1,7 @@
 import React from 'react';
 import WardCard from './WardCard';
 
-const WardGrid = ({ wards }) => {
+const WardGrid = ({ wards, readOnly = false }) => {
   return (
     <div style={{
       display: 'grid',
@@ -12,7 +12,7 @@ const WardGrid = ({ wards }) => {
       margin: '0 auto'
     }}>
       {wards.map((ward) => (
-        <WardCard key={ward.id} ward={ward} />
+        <WardCard key={ward.id} ward={ward} readOnly={readOnly} />
       ))}
     </div>
   );

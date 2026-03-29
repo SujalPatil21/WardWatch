@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchWards, fetchWardCapacity } from '../services/wardService';
 import WardGrid from '../components/Ward/WardGrid';
+import LogoutButton from '../components/common/LogoutButton';
 
 const WardDashboard = () => {
   const [wards, setWards] = useState([]);
@@ -60,8 +61,12 @@ const WardDashboard = () => {
       alignItems: 'center',
       padding: '60px 24px',
       boxSizing: 'border-box',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      position: 'relative'
     }}>
+      <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
+        <LogoutButton />
+      </div>
       <div style={{
         width: '100%',
         maxWidth: '1200px',
