@@ -6,6 +6,10 @@ const client = new Client({
 
   onConnect: () => {
     console.log("✅ CONNECTED");
+
+    client.subscribe("/topic/updates", (message) => {
+      console.log("📡 DATA RECEIVED:", message.body);
+    });
   },
 
   onWebSocketError: (error) => {

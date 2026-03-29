@@ -3,6 +3,7 @@ package com.wardwatch.dev2.controller;
 import com.wardwatch.dev2.model.Bed;
 import com.wardwatch.dev2.service.BedService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,9 +13,16 @@ import java.util.Map;
 @RequestMapping("/api/beds")
 public class BedController {
     private final BedService bedService;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public BedController(BedService bedService) {
+    public BedController(BedService bedService, SimpMessagingTemplate messagingTemplate) {
         this.bedService = bedService;
+        this.messagingTemplate = messagingTemplate;
+    }
+
+    @GetMapping("/debug/test-ws")
+    public void testWebSocket() {
+        messagingTemplate.convertAndSend("/topic/updates", "TEST_MESSAGE");
     }
 
     @GetMapping
