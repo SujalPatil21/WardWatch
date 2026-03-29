@@ -7,24 +7,27 @@ if (!BASE_URL) {
   throw new Error("[WardWatch] CRITICAL: VITE_API_BASE_URL is not defined in the environment.");
 }
 
-// ─── Basic Auth helper ────────────────────────────────────────────────────────
-export function getAuthHeader() {
-  const username = localStorage.getItem('ww_username');
-  const password = localStorage.getItem('ww_password');
-  console.log("[WardWatch] Storage Check:", { username, hasPassword: !!password });
-  if (!username || !password) return null;
-  const header = `Basic ${btoa(`${username}:${password}`)}`;
-  console.log("[WardWatch] Generated Header:", header);
-  return header;
+// ─── Header Helper ────────────────────────────────────────────────────────────
+export function getHeaders(includeAuth) {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (includeAuth) {
+    const username = localStorage.getItem('ww_username');
+    const password = localStorage.getItem('ww_password');
+    if (username && password) {
+      headers['Authorization'] = `Basic ${btoa(`${username}:${password}`)}`;
+    }
+  }
+
+  return headers;
 }
 
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
-export async function api(path, options = {}) {
-  const authHeader = getAuthHeader();
-
+export async function api(path, options = {}, includeAuth = false) {
   const headers = {
-    'Content-Type': 'application/json',
-    ...(authHeader ? { Authorization: authHeader } : {}),
+    ...getHeaders(includeAuth),
     ...(options.headers || {}),
   };
 
@@ -54,7 +57,13 @@ export async function apiLogin({ username, password }) {
   const data = await api('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
-  });
+  }, false);
+
+  if (data) {
+    localStorage.setItem('ww_username', username);
+    localStorage.setItem('ww_password', password);
+  }
+
   console.log('[WardWatch] Login success:', data);
   return data; // { message: "Login successful", role: "STAFF" | "ADMIN" }
 }
@@ -63,7 +72,7 @@ export async function apiRegister({ username, password }) {
   const data = await api('/auth/register', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
-  });
+  }, false);
   console.log('[WardWatch] Register success:', data);
   return data; // { message: "Registration successful", role: "STAFF" }
 }
