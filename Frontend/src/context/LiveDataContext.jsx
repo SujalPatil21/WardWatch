@@ -23,23 +23,20 @@ export const LiveDataProvider = ({ children }) => {
   useEffect(() => {
     console.log("[LiveDataContext] Connecting to WebSocket...");
     
-    // Connect WebSocket and replace state entirely on message
+    /*
     webSocketService.connect((payload) => {
       const actualData = payload.data || payload;
       setData((prevData) => {
-        // Merge over previous data to ensure all keys persist,
-        // but fully replace fields that were sent in the payload.
         return {
           ...prevData,
           ...actualData
         };
       });
     });
+    */
 
     return () => {
-      // Disconnect on unmount
-      console.log("[LiveDataContext] Disconnecting WebSocket...");
-      webSocketService.disconnect();
+      // webSocketService.disconnect();
     };
   }, []);
 

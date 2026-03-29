@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import { LiveDataProvider } from './context/LiveDataContext.jsx'
+import { connectWebSocket } from './websocket/WebSocketService'
+
+connectWebSocket();
 
 const path = window.location.pathname;
 
