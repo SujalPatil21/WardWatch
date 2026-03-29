@@ -20,12 +20,13 @@ const getStatusColor = (status) => {
   }
 };
 
-const WardCard = ({ ward }) => {
+const WardCard = ({ ward, readOnly = false }) => {
   const navigate = useNavigate();
   const status = getStatus(ward.occupiedBeds, ward.totalBeds);
   const statusColor = getStatusColor(status);
 
   const handleClick = () => {
+    if (readOnly) return;
     navigate(`/ward/${ward.id}`);
   };
 
@@ -59,7 +60,7 @@ const WardCard = ({ ward }) => {
         border: `1px solid ${statusColor}30`,
         boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
         transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        cursor: 'pointer',
+        cursor: readOnly ? 'default' : 'pointer',
         display: 'flex',
         flexDirection: 'column',
         gap: '24px',

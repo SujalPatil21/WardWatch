@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import WardGrid from '../components/Ward/WardGrid';
+import LogoutButton from '../components/common/LogoutButton';
 import { useLiveData } from '../context/LiveDataContext';
 
 /**
@@ -75,27 +76,30 @@ export default function AdminDashboard() {
             </p>
           </div>
 
-          <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: '#fff',
-              padding: '10px 18px',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              fontSize: '18px',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-          >
-            <span style={{ fontSize: '14px', fontWeight: '600' }}>{sidebarOpen ? 'Collapse' : 'Expand'}</span>
-            <span>{sidebarOpen ? '⇠' : '⇢'}</span>
-          </button>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: '#fff',
+                padding: '10px 18px',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                fontSize: '18px',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+            >
+              <span style={{ fontSize: '14px', fontWeight: '600' }}>{sidebarOpen ? 'Collapse' : 'Expand'}</span>
+              <span>{sidebarOpen ? '⇠' : '⇢'}</span>
+            </button>
+            <LogoutButton />
+          </div>
         </header>
 
         {/* Content Section */}

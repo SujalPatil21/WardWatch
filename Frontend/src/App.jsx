@@ -4,34 +4,38 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { apiLogin, apiRegister } from './api/client';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminOverview from './pages/AdminOverview';
 import WardDetailPage from './pages/WardDetailPage';
 import QueueDashboard from './pages/QueueDashboard';
 import ProtectedRoute from './routes/ProtectedRoute';
-import CorridorScene from './components/CorridorScene';
 
 // ─── Main Routing Logic ──────────────────────────────────────────────────────
 function MainRouter() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, role } = useAuth();
 
   return (
     <Routes>
       {/* 
           Public Route: Root opens LandingPage by default.
-          Redirects to /dashboard ONLY if already authenticated.
+          Redirects to correct dashboard if already authenticated.
       */}
       <Route path="/" element={
-        isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
+        isAuthenticated ? (
+          role === 'ADMIN' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />
+        ) : <LandingPage />
       } />
 
-      {/* 
-          Protected Routes: Wrapped in ProtectedRoute layout.
-          If not authenticated, these will redirect back to "/".
-      */}
-      <Route element={<ProtectedRoute />}>
+      {/* Admin Protected Routes */}
+      <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+        <Route path="/admin" element={<AdminOverview />} />
+        <Route path="/admin/queue" element={<QueueDashboard />} />
+      </Route>
+
+      {/* Staff Protected Routes */}
+      <Route element={<ProtectedRoute allowedRoles={['STAFF']} />}>
         <Route path="/dashboard" element={<AdminDashboard />} />
         <Route path="/queue" element={<QueueDashboard />} />
         <Route path="/ward/:id" element={<WardDetailPage />} />
-        <Route path="/transition" element={<CorridorScene />} />
       </Route>
 
       {/* Fallback for undefined paths */}
@@ -198,26 +202,34 @@ function LoginPanel() {
       } else {
         // Call backend to verify credentials
         const data = await apiLogin({ username, password });
-        // Persist credentials in localStorage for Basic Auth on future requests
         const resolvedRole = data?.role || 'STAFF';
-        navigate('/transition');
+        
+        // Direct redirect based on role
+        if (resolvedRole === 'ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
+        
         login(username, password, resolvedRole);
-        console.log("[WardWatch] AFTER LOGIN CALL", localStorage.getItem("ww_username"));
       }
     } catch (err) {
-      // Fallback for demo / backend-down scenarios
       if (
         err.message.includes('Failed to fetch') ||
         err.message.includes('Cannot reach server') ||
         err.message.includes('JSON')
       ) {
         if (!isRegistering) {
-          // Still persist so API calls work if backend comes up
-          navigate('/transition');
-          login(username, password, role.toUpperCase());
-          console.log("[WardWatch] DEMO MODE: AFTER LOGIN CALL", localStorage.getItem("ww_username"));
-
-          alert(`Demo mode: simulated login as ${role.toUpperCase()}`);
+          const resolvedRole = role.toUpperCase();
+          
+          if (resolvedRole === 'ADMIN') {
+            navigate('/admin');
+          } else {
+            navigate('/dashboard');
+          }
+          
+          login(username, password, resolvedRole);
+          alert(`Demo mode: simulated login as ${resolvedRole}`);
         }
       } else {
         setError(err.message || 'System error. Please verify input.');
