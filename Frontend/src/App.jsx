@@ -18,38 +18,56 @@ function MainRouter() {
   return (
     <Routes>
       {/* 
-          Public Route: Root opens LandingPage by default.
-          Redirects to correct dashboard if already authenticated.
+          Public Route: Always shows Landing Page.
+          After login, LoginPanel redirects to the correct dashboard.
+          Refresh stays here intentionally — user must log in again visually
+          (but ProtectedRoute allows access to guarded routes if still authenticated).
       */}
-      <Route path="/" element={
-        isAuthenticated ? (
-          role === 'ADMIN' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />
-        ) : <LandingPage />
-      } />
+      <Route path="/" element={<LandingPage />} />
 
       {/* Admin Protected Routes */}
-      <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-        <Route path="/admin" element={<AdminOverview />} />
-        <Route path="/admin/queue" element={<QueueDashboard />} />
-      </Route>
+      <Route path="/admin" element={
+        localStorage.getItem("ww_role") === "ADMIN" 
+          ? <AdminOverview /> 
+          : <Navigate to="/" />
+      } />
+      <Route path="/admin/queue" element={
+        localStorage.getItem("ww_role") === "ADMIN" 
+          ? <QueueDashboard /> 
+          : <Navigate to="/" />
+      } />
 
       {/* Staff Protected Routes */}
-      <Route element={<ProtectedRoute allowedRoles={['STAFF']} />}>
-        <Route path="/dashboard" element={<AdminDashboard />} />
-        <Route path="/queue" element={<QueueDashboard />} />
+      <Route path="/dashboard" element={
+        localStorage.getItem("ww_username") 
+          ? <AdminDashboard /> 
+          : <Navigate to="/" />
+      } />
+      <Route path="/queue" element={
+        localStorage.getItem("ww_username") 
+          ? <QueueDashboard /> 
+          : <Navigate to="/" />
+      } />
 
-        <Route
-          path="/ward/:id"
-          element={
-            <>
-              <WardDetailPage />
-              <FloatingHandoverButton />
-            </>
-          }
-        />
+      <Route
+        path="/ward/:id"
+        element={
+          localStorage.getItem("ww_username")
+            ? (
+                <>
+                  <WardDetailPage />
+                  <FloatingHandoverButton />
+                </>
+              )
+            : <Navigate to="/" />
+        }
+      />
 
-        <Route path="/handover/:wardId" element={<ShiftHandover />} />
-      </Route>
+      <Route path="/handover/:wardId" element={
+        localStorage.getItem("ww_username") 
+          ? <ShiftHandover /> 
+          : <Navigate to="/" />
+      } />
 
       {/* Fallback for undefined paths */}
       <Route path="*" element={<Navigate to="/" replace />} />

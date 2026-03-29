@@ -8,7 +8,7 @@ const LogoutButton = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/', { replace: true });
+    window.location.href = "/";
   };
 
   return (
