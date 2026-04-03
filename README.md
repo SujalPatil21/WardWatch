@@ -123,5 +123,3 @@ The system currently supports the full **core flow** (queue → admit → discha
 
 ---
 
-If you want, I can generate a Swagger/OpenAPI doc or frontend mock data JSON next.
-
