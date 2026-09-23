@@ -8,7 +8,7 @@
   <b>Know every bed. Every patient. Every second.</b>
 </p>
 
-
+ 
 <p align="center">
   <img src="https://img.shields.io/badge/Backend-SpringBoot-green?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61DAFB?style=for-the-badge"/>
